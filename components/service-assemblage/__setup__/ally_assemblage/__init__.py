@@ -12,6 +12,10 @@ Contains the assemblage setup files.
 # --------------------------------------------------------------------
 
 NAME = 'assemblage service'
-GROUP = 'assemblage'
 VERSION = '1.0'
 DESCRIPTION = 'Provides the assemblage service'
+AUTHOR = 'Gabriel Nistor'
+AUTHOR_EMAIL = 'gabriel.nistor@sourcefabric.org'
+KEYWORDS = ['Ally', 'REST', 'gateway', 'service', 'assemblage']
+TEST_SUITE = '__unit_test__'
+CLASSIFIERS = ['Development Status :: 4 - Beta']
