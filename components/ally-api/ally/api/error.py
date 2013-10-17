@@ -26,7 +26,7 @@ class InputError(Exception):
         Initializes the exception based on the items(s).
         
         ex:
-            raise InputError('No idea what is wrong %(reason)s', Entity.Id, reason='blame Gabriel')
+            raise InputError('No idea what is wrong %(reason)s', reason='blame Gabriel')
             # The message is not associated with any type.
             
             raise InputError('Something wrong with the id', Entity.Id) # The message is associated with the entity id.
@@ -52,7 +52,7 @@ class InputError(Exception):
         
         super().__init__()
         
-    def update(self, msg, *items, **data):
+    def update(self, *items, **data):
         '''
         Updates the input error with new information.
 
@@ -65,20 +65,16 @@ class InputError(Exception):
         @param data: key arguments
             Data that will be used in the messages place holders.
         '''
-        assert isinstance(msg, str), 'Invalid message %s' % msg
-        
-        msgs = [msg]
         for item in items:
-            if isinstance(item, str): msgs.append(item)
+            if isinstance(item, str): self.messages.append(item)
             else:
                 typ = typeFor(item)
                 assert isinstance(typ, Type), 'Invalid type %s' % typ
-                assert msgs, 'Please provide messages for type %s' % typ
-                if typ not in self.messageByType: self.messageByType[typ] = msgs
-                else: self.messageByType[typ].extend(msgs)
-                msgs = []
+                assert self.messages, 'Please provide messages for type %s' % typ
+                if typ not in self.messageByType: self.messageByType[typ] = self.messages
+                else: self.messageByType[typ].extend(self.messages)
+                self.messages = []
                 
-        self.messages.extend(msgs)
         self.data.update(data)
         
     def __str__(self):
@@ -104,17 +100,24 @@ class IdError(InputError):
         Initializes the invalid id exception based on the items(s).
         @see: InputError.__init__
         '''
-        if items:
+        self._hasId = False
+        super().__init__(_('Unknown value'), *items, **data)
+        
+    def update(self, *items, **data):
+        '''
+        @see: InputError.update
+        '''
+        if not self._hasId:
             for k, item in enumerate(items):
                 if not isinstance(item, str):
                     typ = typeFor(item)
-                    if isinstance(typ, TypeModel):
-                        assert isinstance(typ, TypeModel)
-                        assert isinstance(typ.propertyId, TypeProperty), \
-                        'Invalid property id % for model %s' % (typ.propertyId, typ)
-                        items = chain(items[:k], (typ.propertyId,), items[k + 1:])
+                    assert isinstance(typ, TypeModel), 'Invalid model type %s' % typ
+                    assert isinstance(typ.propertyId, TypeProperty), \
+                    'Invalid property id % for model %s' % (typ.propertyId, typ)
+                    items = chain(items[:k], (typ.propertyId,), items[k + 1:])
+                    self._hasId = True
                     break
-        super().__init__(_('Unknown value'), *items, **data)
+        super().update(*items, **data)
         
 class ExistError(InputError):
     '''

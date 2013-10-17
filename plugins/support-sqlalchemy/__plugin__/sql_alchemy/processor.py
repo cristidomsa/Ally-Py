@@ -11,9 +11,9 @@ Provides the configurations for general SQL alchemy processors.
 
 from ally.container import ioc
 from ally.design.processor.handler import Handler
-from sql_alchemy.impl.processor.transaction import TransactionHandler
+from sql_alchemy.core.impl.processor.transaction import TransactionHandler
+
 
 # --------------------------------------------------------------------
-
 @ioc.entity
 def transaction() -> Handler: return TransactionHandler()

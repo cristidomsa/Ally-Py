@@ -9,19 +9,20 @@ Created on May 17, 2013
 Provides the invokers created based on services.
 '''
 
+from collections import Iterable
+
 from ally.api.operator.type import TypeService, TypeCall
 from ally.api.type import typeFor, Type
-from ally.design.processor.attribute import requires, defines
+from ally.design.processor.attribute import requires, defines, optional
 from ally.design.processor.context import Context
 from ally.design.processor.handler import HandlerProcessor
 from ally.support.api.util_service import iterateInputs
 from ally.support.util_context import attributesOf, hasAttribute
 from ally.support.util_spec import IDo
 from ally.support.util_sys import locationStack
-from collections import Iterable
+
 
 # --------------------------------------------------------------------
-
 class Register(Context):
     '''
     The register context.
@@ -36,9 +37,10 @@ class Register(Context):
     On the first position the destination invoker to copy to and on the second position the source to copy from, returns
     the destination invoker. Accepts also a named argument containing a set of attributes names to exclude.
     ''')
+    # ---------------------------------------------------------------- Optional
+    exclude = optional(set)
     # ---------------------------------------------------------------- Required
     services = requires(Iterable)
-    exclude = requires(set)
     
 class InvokerCall(Context):
     '''
@@ -104,7 +106,7 @@ class InvokerServiceHandler(HandlerProcessor):
                 assert isinstance(call, TypeCall), 'Invalid call %s' % call
                 
                 invokerId = '%s.%s.%s' % (service.clazz.__module__, service.clazz.__name__, call.name)
-                if invokerId in register.exclude: continue
+                if Register.exclude in register and register.exclude and invokerId in register.exclude: continue
                 
                 invoker = Invoker()
                 assert isinstance(invoker, InvokerCall), 'Invalid invoker %s' % invoker

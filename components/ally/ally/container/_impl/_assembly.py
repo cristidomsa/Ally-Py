@@ -10,7 +10,6 @@ Provides the setup assembly implementations for the IoC module.
 '''
 
 from ..error import SetupError, ConfigError
-from ..impl.config import Config
 from collections import deque
 from inspect import ismodule
 import abc
@@ -89,17 +88,12 @@ class Assembly:
         assert isinstance(ass, Assembly), 'Invalid assembly %s' % ass
         return ass.processForName(name)
 
-    def __init__(self, configExtern):
+    def __init__(self):
         '''
         Construct the assembly.
         
-        @param configExtern: dictionary{string, object}
-            The external configurations values to be used in the context.
         @ivar configUsed: set{string}
             A set containing the used configurations names from the external configurations.
-        @ivar configurations: dictionary{string:Config}
-            A dictionary of the assembly configurations, the key is the configuration name and the value is a
-            Config object.
         @ivar calls: dictionary{string, Callable}
             A dictionary containing as a key the name of the call to be resolved and as a value the Callable that will
             resolve the name. The Callable will not take any argument.
@@ -107,54 +101,54 @@ class Assembly:
             A dictionary containing the calls for a value, the value id is used as a key.
         @ivar called: set[string]
             A set of the called calls in this assembly.
-            
-        @ivar _processing: deque(string)
-            Used internally for tracking the processing chain.
         '''
-        assert isinstance(configExtern, dict), 'Invalid external configurations %s' % configExtern
-        self.configExtern = configExtern
-        self.configUsed = set()
-        self.configurations = {}
         self.calls = {}
         self.callsOfValue = {}
         self.called = set()
-
-        self._processing = deque()
-
-    def trimmedConfigurations(self):
-        '''
-        Provides a configurations dictionary that has the configuration names trimmed.
         
-        @return:  dictionary{string: Config}
-            A dictionary of the assembly configurations, the key is the configuration name and the value 
-            is a Config object.
+        self._setupsToIndex = []
+        self._setupsToAssemble = []
+        self._processing = deque()
+        
+    def addSetupModule(self, module):
         '''
-        def expand(name, sub):
-            ''' Used for expanding configuration names'''
-            if sub: root = name[:-len(sub)]
-            else: root = name
-            if not root: return name
-            if root[-1] == '.': root = root[:-1]
-            k = root.rfind('.')
-            if k < 0: return name
-            if sub: return root[k + 1:] + '.' + sub
-            return root[k + 1:]
-
-        configs, expanded = {}, set()
-        for name, config in self.configurations.items():
-            assert isinstance(config, Config), 'Invalid configuration %s' % config
-            sname = name[len(config.group) + 1:]
-            other = configs.pop(sname, None)
-            while other or sname in expanded:
-                if other:
-                    assert isinstance(other, Config)
-                    configs[expand(other.name, sname)] = other
-                    expanded.add(sname)
-                sname = expand(name, sname)
-                other = configs.pop(sname, None)
-            configs[sname] = config
-        return configs
+        Adds a new setup module to the assembly.
+        
+        @param module: module
+            The setup module.
+        '''
+        assert ismodule(module), 'Invalid module setup %s' % module
+        try: module.__ally_setups__
+        except AttributeError: log.info('No setup found in %s', module)
+        else: self._setupsToIndex.extend(module.__ally_setups__)
     
+    def index(self):
+        '''
+        Index into this assembly the pending index setups.
+        
+        @return: self
+            The self instance for chaining purposes.
+        '''
+        if self._setupsToIndex:
+            for setup in sorted(self._setupsToIndex, key=lambda setup: setup.priority_index): setup.index(self)
+            self._setupsToAssemble = self._setupsToIndex
+            self._setupsToIndex = []
+        return self
+    
+    def assemble(self):
+        '''
+        Assembles into this assembly the pending setups.
+        
+        @return: self
+            The self instance for chaining purposes.
+        '''
+        if self._setupsToAssemble:
+            self._setupsToAssemble.sort(key=lambda setup: setup.priority_assemble)
+            for setup in self._setupsToAssemble: setup.assemble(self)
+            self._setupsToAssemble = []
+
+        return self
+
     def fetchForName(self, name):
         '''
         Fetch the call with the specified name.
@@ -187,50 +181,42 @@ class Assembly:
         self._processing.pop()
         return value
 
-class Context:
-    '''
-    Provides the context of the setup functions and setup calls.
-    '''
-
-    def __init__(self):
+class Activator:
+    ''' Provides the activate assembly to be used with ``with`` for an opened assembly
+    to ensure closing and error reporting. '''
+    
+    def __init__(self, assembly, reason):
         '''
-        Construct the context.
-        '''
-        self._modules = []
-
-    def addSetupModule(self, module):
-        '''
-        Adds a new setup module to the context.
+        Create the watcher.
         
-        @param module: module
-            The setup module.
-        '''
-        assert ismodule(module), 'Invalid module setup %s' % module
-        try: module.__ally_setups__
-        except AttributeError: log.info('No setup found in %s', module)
-        else:
-            self._modules.append(module)
-            self._modules.sort(key=lambda module: module.__name__)
-
-    def assemble(self, assembly):
-        '''
-        Assembles into the provided assembly this context.
+        :param assembly: The assembly to activate
+        :type action: Assembly.
         
-        @param assembly: Assembly
-            The assembly to assemble the context into.
-        @return: Assembly
-            The assembled assembly.
+        :param reason: The reason name to associate with the assembly.
+        :type reason: str.
         '''
         assert isinstance(assembly, Assembly), 'Invalid assembly %s' % assembly
+        assert isinstance(reason, str), 'Invalid reason %s' % reason
         
-        setups = deque()
-        for module in self._modules: setups.extend(module.__ally_setups__) 
+        self.assembly = assembly
+        self.reason = reason
         
-        for setup in sorted(setups, key=lambda setup: setup.priority_index):
-            assert isinstance(setup, Setup), 'Invalid setup %s' % setup
-            setup.index(assembly)
-
-        for setup in sorted(setups, key=lambda setup: setup.priority_assemble):
-            setup.assemble(assembly)
-
-        return assembly
+    def __enter__(self):
+        Assembly.stack.append(self.assembly)
+        return self.assembly
+        
+    def __exit__(self, type, value, tb):
+        assert Assembly.stack, 'No assembly available for deactivation'
+        Assembly.stack.pop()
+        
+        if not isinstance(value, Exception): return
+        if isinstance(value, SystemExit): return
+        if isinstance(value, (SetupError, ConfigError)):
+            log.error('-' * 150)
+            log.exception('A setup or configuration error occurred, rebuilding the configurations might help.')
+            log.error('-' * 150)
+        else:
+            log.error('-' * 150)
+            log.exception('A problem occurred while %s.', self.reason)
+            log.error('-' * 150)
+        return True

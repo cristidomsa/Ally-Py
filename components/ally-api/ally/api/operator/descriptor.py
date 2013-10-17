@@ -15,7 +15,7 @@ from .type import TypeContainer, TypeProperty, TypeQuery, TypeCriteria, TypeCall
     TypeService
 from abc import ABCMeta
 from ally.support.util_spec import IGet, IContained, ISet, IDelete
-from ally.support.util_sys import getAttrAndClass
+from ally.support.util_sys import getAttrAndClass, updateWrapper
 from inspect import isclass
 import logging
 
@@ -411,6 +411,7 @@ def processAsService(clazz, service):
         # We provide the original function code and name.
         callAPI.__code__ = getattr(clazz, name).__code__  
         callAPI.__name__ = getattr(clazz, name).__name__
+        updateWrapper(callAPI, getattr(clazz, name))
         setattr(clazz, name, callAPI)
 
     return clazz

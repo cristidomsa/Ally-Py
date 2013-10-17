@@ -128,19 +128,26 @@ def registerProxyHandler(proxyHandler, proxy):
     assert isinstance(proxy, Proxy)
     proxy._proxy_handlers.insert(0, proxyHandler)
 
-def hasProxyHandler(proxyHandler, proxy):
+def hasProxyHandler(handler, proxy):
     '''
-    Checks if the provided proxy has the specified proxy handler, the check is done by using equality.
+    Checks if the provided proxy has the specified proxy handler or proxy handler class, the check is done by using equality.
     
-    @param proxyHandler: IProxyHandler
+    @param handler: IProxyHandler|class of IProxyHandler
         The proxy handler to be searched in the provided proxy object.
     @param proxy: @see: analyzeProxy
         The proxy object to search in.
     '''
-    assert isinstance(proxyHandler, IProxyHandler), 'Invalid proxy handler %s' % proxyHandler
     proxy, _method = analyzeProxy(proxy)
     assert isinstance(proxy, Proxy)
-    return proxyHandler in proxy._proxy_handlers
+    
+    if isclass(handler):
+        assert issubclass(handler, IProxyHandler), 'Invalid proxy handler %s' % handler
+        for instance in proxy._proxy_handlers:
+            if isinstance(instance, handler): return True
+        return False
+        
+    assert isinstance(handler, IProxyHandler), 'Invalid proxy handler %s' % handler
+    return handler in proxy._proxy_handlers
 
 # --------------------------------------------------------------------
 
@@ -186,7 +193,7 @@ class Execution:
         '''
         try: handler = self.handlers.popleft()
         except IndexError:
-            raise AttributeError('No proxy handler resolves method %r' % self.methodName)
+            raise AttributeError('No proxy handler resolves method %r' % self.proxyCall.proxyMethod.name)
         assert isinstance(handler, IProxyHandler), 'Invalid handler %s' % handler
         return handler.handle(self)
 

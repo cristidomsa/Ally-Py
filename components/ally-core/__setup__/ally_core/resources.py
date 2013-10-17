@@ -9,12 +9,10 @@ Created on Nov 24, 2011
 Provides the configurations for the resources.
 '''
 
-from .decode import assemblyDecode, assemblyDecodeExport, \
-    updateAssemblyDecodeExport
-from .definition import definitions
-from .encode import assemblyEncode
+import logging
+
 from ally.container import ioc
-from ally.container.priority import PRIORITY_LOAD_ENTITIES
+from ally.container.support import PRIORITY_LOAD_ENTITIES
 from ally.core.impl.processor.assembler.decoding import DecodingHandler, \
     decodingExport
 from ally.core.impl.processor.assembler.definition import DefinitionHandler
@@ -33,10 +31,14 @@ from ally.core.impl.processor.content import AssemblerContentHandler
 from ally.design.priority import Priority
 from ally.design.processor.assembly import Assembly
 from ally.design.processor.handler import Handler
-import logging
+
+from .decode import assemblyDecode, assemblyDecodeExport, \
+    updateAssemblyDecodeExport
+from .definition import definitions
+from .encode import assemblyEncode
+
 
 # --------------------------------------------------------------------
-
 log = logging.getLogger(__name__)
 
 PRIORITY_REGISTER = Priority('Register services', after=PRIORITY_LOAD_ENTITIES)

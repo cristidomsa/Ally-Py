@@ -15,7 +15,7 @@ from weakref import WeakSet
 
 # --------------------------------------------------------------------
 
-ALLOWED = {'__module__', '__doc__', '__locals__'}
+ALLOWED = {'__module__', '__qualname__', '__doc__', '__locals__'}
 # The allowed keys in the namespace.
 
 # --------------------------------------------------------------------

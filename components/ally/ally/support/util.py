@@ -13,6 +13,7 @@ from collections import Iterable, Iterator, namedtuple, deque
 from inspect import isclass
 from weakref import WeakKeyDictionary
 import re
+from io import StringIO
 
 # --------------------------------------------------------------------
 
@@ -420,10 +421,15 @@ class TextTable:
             self._rows.append((bool(self._processing), row))
             isFirst = False
             
-    def render(self, out):
+    def render(self, out=None):
         '''
-        Renders the table into the provided output.
+        Renders the table into the provided output, if not output is provided it will return the rendered table.
         '''
+        if out is None:
+            out = StringIO()
+            ret = True
+        else: ret = False
+        
         self._line(out)
         out.write('\n')
         self._row(out, (('{: ^%s}' % (self._sizes[k] - 1)).format(header) for k, header in enumerate(self._headers)))
@@ -437,6 +443,8 @@ class TextTable:
             if not hasNext:
                 self._line(out)
                 out.write('\n')
+                
+        if ret: return out.getvalue()
         
     # ----------------------------------------------------------------
     

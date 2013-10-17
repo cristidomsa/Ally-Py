@@ -21,27 +21,34 @@ import hashlib
 #TODO: Gabriel: resarch more the documentation conventions.
 # --------------------------------------------------------------------
 
+                          
+#     :Id: The unique identifier of the access.
+#     
+#     :Path: Contains the path that the access maps to. The path contains beside the fixed string names 
+#            also markers '*' for where dynamic path elements are expected.
+#            
+#     :Method: The HTTP method name that this access maps to.
+#     
+#     :Shadowing: The access that this access is actually shadowing, this means that the access path is just a reroute
+#                 for the shadowing access.
+#     
+#     :Shadowed: The access that this access is shadowed, this means that this access is overridden by the shadow in
+#                required cases.
+#     
+#     :Priority: The ACL priority when constructing gateways on it.
+#     
+#     :Output: The output type signature for access.
+#     
+#     :Hash: The hash that represents the full aspect of the access.
 class Access(Entity):
     '''The access model contains data that relates to an available REST resource URI that access can be granted based on.
     
-    :Id: The unique identifier of the access.
-    
-    :Path: Contains the path that the access maps to. The path contains beside the fixed string names 
-    also markers '*' for where dynamic path elements are expected.
-           
-    :Method: The HTTP method name that this access maps to.
-    
-    :Shadowing: The access that this access is actually shadowing, this means that the access path is just a reroute
-    for the shadowing access.
-    
-    :Shadowed: The access that this access is shadowed, this means that this access is overridden by the shadow in
-    required cases.
-    
-    :Priority: The ACL priority when constructing gateways on it.
-    
-    :Output: The output type signature for access.
-    
-    :Hash: The hash that represents the full aspect of the access.
+    :Attribute Id: The unique identifier of the access.
+    :Attribute Path: Contains the path that the access maps to. The path contains beside the fixed string names 
+                     also markers '*' for where dynamic path elements are expected.
+    :Attribute Method: The HTTP method name that this access maps to.
+    :Attribute Shadowing: The access that this access is actually shadowing, this means that the access path is just a reroute
+                          for the shadowing access.
     '''
     Path = str
     Method = str
@@ -57,17 +64,17 @@ Access = modelACL(Access)
 class AccessCreate(Access):
     '''Contains data required for creating an ACL access.
     
-    :Entries: The entries dictionary needs to have entries as there are '*' in the access 'Path' except if access
+    :Attribute Entries: The entries dictionary needs to have entries as there are '*' in the access 'Path' except if access
               is a shadow in that case the entries from the shadowed will be used, the dictionary
               key is the position of the '*' starting from 1 for the first '*', and as a value the type signature.
     
-    :EntriesShadowing: The dictionary containing as a key the position of the '*' in the 'Path' and as a value the 
+    :Attribute EntriesShadowing: The dictionary containing as a key the position of the '*' in the 'Path' and as a value the 
                        the position in the shadowing access entry.
                        
-    :EntriesShadowed: The dictionary containing as a key the position of the '*' in the 'Path' and as a value the 
+    :Attribute EntriesShadowed: The dictionary containing as a key the position of the '*' in the 'Path' and as a value the 
                       the position in the shadowed access entry.
                       
-    :Properties: The properties dictionary associated with the access, as a key the property name and as a value
+    :Attribute Properties: The properties dictionary associated with the access, as a key the property name and as a value
                  the property type name.
     '''
     Entries = Dict(int, str)

@@ -162,13 +162,16 @@ class UtcNow(expression.FunctionElement):
     '''
     A function that works like “CURRENT_TIMESTAMP” except applies the appropriate
     conversions so that the time is in UTC time.
+    ex: Column("timestamp", DateTime, server_default=UtcNow())
     @see: http://docs.sqlalchemy.org/en/latest/core/compiler.html at Further Examples
     '''
     type = DateTime()
 
+@compiles(UtcNow, 'mysql')
+def mysqlUtcNow(element, compiler, **kw): return 'NOW()'
 @compiles(UtcNow, 'postgresql')
 def pgUtcNow(element, compiler, **kw): return 'TIMEZONE(\'utc\', CURRENT_TIMESTAMP)'
 @compiles(UtcNow, 'mssql')
 def mssqlUtcNow(element, compiler, **kw): return 'GETUTCDATE()'
 @compiles(UtcNow, 'sqlite')
-def sqliteUtcNow(element, compiler, **kw): return 'datetime(\'now\',\'localtime\')'
+def sqliteUtcNow(element, compiler, **kw): return '(datetime(\'now\',\'localtime\'))'

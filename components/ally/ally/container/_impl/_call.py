@@ -9,17 +9,19 @@ Created on Jan 8, 2013
 Provides the setup calls implementations for the IoC module.
 '''
 
-from ..error import SetupError, ConfigError
-from ._assembly import Assembly
-from ._entity import Initializer
-from ally.design.priority import Priority
 from functools import partial
 from inspect import isclass, isgenerator
-from itertools import chain
 import logging
 
-# --------------------------------------------------------------------
+from ally.design.priority import Priority
 
+from ..error import SetupError, ConfigError
+from ..impl.config import Config
+from ._assembly import Assembly
+from ._entity import Initializer
+
+
+# --------------------------------------------------------------------
 log = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------
@@ -339,13 +341,13 @@ class CallEntity(WithCall, WithType, WithListeners):
             assert log.debug('Finalized %r with value %s', self.name, value) or True
         return self._value
 
-class CallConfig(WithType, WithListeners):
+class CallConfig(WithCall, WithType, WithListeners):
     '''
     Call that delivers a value.
     @see: Callable, WithType, WithListeners
     '''
 
-    def __init__(self, assembly, name, types=None):
+    def __init__(self, assembly, name, call, group, description=None, types=None):
         '''
         Construct the configuration call.
         
@@ -355,48 +357,75 @@ class CallConfig(WithType, WithListeners):
             The configuration name.
         @param value: object
             The value to deliver.
-            
+        @param group: string
+            The configuration group.
+        @param description: string|None
+            The configuration description.
+        
+        @see: WithCall.__init__
         @see: WithType.__init__
         @see: WithListeners.__init__
         '''
+        assert isinstance(assembly, Assembly), 'Invalid assembly %s' % assembly
+        assert isinstance(name, str), 'Invalid name %s' % name
+        assert isinstance(group, str), 'Invalid group %s' % group
+        assert description is None or isinstance(description, str), 'Invalid description %s' % description
+        WithCall.__init__(self, call)
         WithType.__init__(self, types)
         WithListeners.__init__(self)
 
         self.assembly = assembly
         self.name = name
-        self.external = False
-        self._hasValue = False
-        self._processed = False
+        self.group = group
+        self.description = description
         
+        self._hasValue = False
+        self._external = False
+        self._processed = False
+        self._config = None
+
+    value = property(lambda self: self._value if self._hasValue else None, doc=
+    '''
+    @type value: object
+    Provides the configuration value currently available without triggering any processing.
+    ''')
+       
     def validateAcceptListeners(self):
         '''
         @see: WithListeners.validateAcceptListeners
         '''
         if self._processed: raise SetupError('Already processed cannot add anymore listeners to \'%s\'' % self.name)
+    
+    def addAfter(self, listener, auto):
+        '''
+        @see: WithListeners.addBefore
+        '''
+        raise SetupError('Cannot add after event to the \'%s\' configuration, only before events are allowed' % self.name)
 
-    def setValue(self, value):
+    def setValue(self, value, external=True):
         '''
         Sets the value to deliver.
         
         @param value: object
             The value to deliver.
+        @param external: boolean
+            Flag indicating the value is from an external source.
         '''
-        if isinstance(value, Exception):
-            self._value = value
-        else:
-            self._value = self.validate(value)
-            self._hasValue = True
-
-    hasValue = property(lambda self: self._hasValue, doc=
-'''
-@type hasValue: boolean
-    True if the configuration has a value.
-''')
-    value = property(lambda self: self._value, setValue, doc=
-'''
-@type value: object
-    The value to deliver.
-''')
+        assert isinstance(external, bool), 'Invalid external flag %s' % external
+        if self._processed: raise SetupError('Already processed cannot set value to \'%s\'' % self.name)
+        self._hasValue = True
+        self._value = self.validate(value)
+        if external: self._external = True
+        
+    def config(self):
+        '''
+        Provides the @see: Config object created based on this configuration. 
+        '''
+        if self._config is None:
+            try: value = self()
+            except Exception as e: value = e
+            self._config = Config(self.name, value, self.group, self.description, not self._external)
+        return self._config
 
     def __call__(self):
         '''
@@ -405,13 +434,19 @@ class CallConfig(WithType, WithListeners):
         if not self._processed:
             self._processed = True
             self.assembly.called.add(self.name)
-            for listener, auto in chain(self._listenersBefore, self._listenersAfter):
+                
+            if not self._hasValue:
+                self._hasValue = True
+                try: self._value = self.call()
+                except ConfigError as e: self._value = e
+
+            for listener, auto in self._listenersBefore:
                 if auto:
-                    if not self.external: listener() 
+                    if not self._external: listener() 
                     # We only call the listeners if the configuration was not provided externally
                 else: listener()
+                
         if isinstance(self._value, Exception): raise self._value
-        if not self._hasValue: raise ConfigError('No value for configuration %s' % self.name)
         return self._value
 
 class CallStart(CallEvent):

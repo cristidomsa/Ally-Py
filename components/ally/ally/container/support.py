@@ -9,8 +9,13 @@ Created on Jan 12, 2012
 Provides support functions for the container.
 '''
 
-from ..support.util_sys import callerLocals, callerGlobals
-from ._impl._aop import AOPResources
+from collections import Iterable
+from functools import partial
+from inspect import isclass, ismodule, getsource, isfunction, ismethod
+
+from ally.design.priority import Priority, PRIORITY_NORMAL, sortByPriorities
+
+from ..support.util_sys import callerLocals
 from ._impl._assembly import Assembly
 from ._impl._call import CallEntity, CallConfig, CallEventControlled
 from ._impl._setup import register, SetupConfig, SetupStart, SetupFunction
@@ -19,15 +24,14 @@ from ._impl._support import SetupEntityListen, SetupEntityListenAfterBinding, \
 from .error import SetupError
 from .event import ITrigger, createEvents
 from .impl.config import Config
-from .priority import PRIORITY_LOAD_ENTITIES
 from .wire import createWirings
-from ally.design.priority import sortByPriorities
-from collections import Iterable
-from functools import partial
-from inspect import isclass, ismodule, getsource, isfunction, ismethod
+
 
 # --------------------------------------------------------------------
+PRIORITY_LOAD_ENTITIES = Priority('Load all entities', after=PRIORITY_NORMAL)
+# The priority for @see: loadAllEntities.
 
+# --------------------------------------------------------------------
 def nameEntity(target, location=None):
     '''
     Provides the setup names to be used setup modules based on a setup target and name.
@@ -246,30 +250,6 @@ def include(module, inModule=None):
 # --------------------------------------------------------------------
 # Functions available in setup functions calls.
 
-def entities():
-    '''
-    !Attention this function is only available in an open assembly if the assembly is not provided @see: ioc.open!
-    Provides all the entities references found in the current assembly wrapped in a AOP class.
-    
-    @return: AOP
-        The resource AOP.
-    '''
-    return AOPResources({name:name for name, call in Assembly.current().calls.items() if isinstance(call, CallEntity)})
-
-def entitiesLocal():
-    '''
-    !Attention this function is only available in an open assembly if the assembly is not provided @see: ioc.open!
-    Provides all the entities references for the module from where the call is made found in the current assembly.
-    
-    @return: AOP
-        The resource AOP.
-    '''
-    registry = callerGlobals()
-    assert '__name__' in registry, 'The entities local call needs to be made from a setup module function'
-    rsc = AOPResources({name:name for name, call in Assembly.current().calls.items() if isinstance(call, CallEntity)})
-    rsc.filter(registry['__name__'] + '.**')
-    return rsc
-
 def entitiesFor(clazz, assembly=None):
     '''
     !Attention this function is only available in an open assembly if the assembly is not provided @see: ioc.open! 
@@ -385,6 +365,14 @@ def eventsFor(*triggers, source=None):
     sortByPriorities(calls, priority=lambda item: item[0].priority)
     return calls
 
+def performEventsFor(*triggers, source=None):
+    '''
+    Executes all the events for the provided triggers.
+    
+    @see: eventsFor
+    '''
+    for call, *_other in eventsFor(*triggers, source=source): call()
+    
 # --------------------------------------------------------------------
 
 def force(setup, value, assembly=None):
@@ -408,7 +396,7 @@ def force(setup, value, assembly=None):
     try:
         call = assembly.fetchForName(setup.name)
         assert isinstance(call, CallConfig), 'Invalid call %s' % call
-        call.value = value
+        call.setValue(value, False)
     finally: Assembly.stack.pop()
     
 def persist(setup, value, assembly=None):
@@ -427,7 +415,14 @@ def persist(setup, value, assembly=None):
     assembly = assembly or Assembly.current()
     assert isinstance(assembly, Assembly), 'Invalid assembly %s' % assembly
     
-    config = assembly.configurations.get(setup.name)
-    assert isinstance(config, Config), 'Invalid configuration %s for the assembly' % setup.name
-    config.value = value
+    Assembly.stack.append(assembly)
+    try:
+        call = assembly.fetchForName(setup.name)
+        assert isinstance(call, CallConfig), 'Invalid call %s' % call
+        config = call.config()
+        assert isinstance(config, Config), 'Invalid config %s' % config
+        config.value = value
+        config.isCommented = False
+        
+    finally: Assembly.stack.pop()
     

@@ -10,12 +10,17 @@ Provides the database settings for the application database.
 '''
 
 from ally.container import ioc, support
+from ally.design.processor.assembly import Assembly
+from ally.design.processor.handler import Handler
 from sql_alchemy import database_config
+from sql_alchemy.core.impl.binder import BinderHandler
+from sql_alchemy.core.impl.processor.binder.error_translator import \
+    ErrorTranslatorHandler
+from sql_alchemy.core.impl.processor.binder.session import BindSessionHandler
 from sql_alchemy.database_config import alchemySessionCreator, metas
-from sql_alchemy.support.session import bindSession
+
 
 # --------------------------------------------------------------------
-
 support.include(database_config)
 
 # --------------------------------------------------------------------
@@ -30,4 +35,45 @@ def database_url():
 
 # --------------------------------------------------------------------
 
-def bindApplicationSession(proxy): bindSession(proxy, alchemySessionCreator())
+@ioc.entity
+def assemblyBind() -> Assembly:
+    '''The assembly containing the handlers used for binding services/classes with SQL alchemy support'''
+    return Assembly('Bind SQL alchemy')
+
+@ioc.entity
+def assemblyAssembler() -> Assembly:
+    '''
+    The assembly containing the handlers to be used in the assembly of invokers for error handling.
+    '''
+    return Assembly('Assemblers SQL alchemy')
+
+# --------------------------------------------------------------------
+
+@ioc.entity
+def binder():
+    b = BinderHandler()
+    b.bindAssembly = assemblyBind()
+    return b
+
+@ioc.entity
+def bindSession() -> Handler:
+    b = BindSessionHandler()
+    b.sessionCreator = alchemySessionCreator()
+    return b
+
+@ioc.entity
+def errorTranslator() -> Handler:
+    b = ErrorTranslatorHandler()
+    b.assembly = assemblyAssembler()
+    return b
+
+# --------------------------------------------------------------------
+
+@ioc.before(assemblyBind)
+def updateAssemblyBind():
+    assemblyBind().add(bindSession(), errorTranslator())
+
+# --------------------------------------------------------------------
+
+def bindApplicationSession(proxy):
+    binder().bind(proxy)

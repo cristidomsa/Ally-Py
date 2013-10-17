@@ -10,7 +10,6 @@ Provides the logging configurations to be used for the application.
 '''
 
 from ally.container import ioc
-import __deploy__
 import __setup__
 import ally
 
@@ -39,7 +38,7 @@ def debug_for():
 @ioc.config
 def info_for():
     '''The list of packages or module patterns to provide info for'''
-    return [__deploy__.__name__, __setup__.__name__]
+    return [__setup__.__name__]
 
 @ioc.config
 def warning_for():

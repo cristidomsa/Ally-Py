@@ -87,16 +87,16 @@ class RequestHandler(BaseHTTPRequestHandler):
         response, responseCnt = arg.response, arg.responseCnt
         assert isinstance(response, ResponseHTTP), 'Invalid response %s' % response
         assert isinstance(responseCnt, ResponseContentHTTP), 'Invalid response content %s' % responseCnt
-
-        if ResponseHTTP.headers in response and response.headers is not None:
-            for name, value in response.headers.items(): self.send_header(name, value)
-
+        
         assert isinstance(response.status, int), 'Invalid response status code %s' % response.status
         if ResponseHTTP.text in response and response.text: text = response.text
         elif ResponseHTTP.code in response and response.code: text = response.code
         else: text = None
-        
         self.send_response(response.status, text)
+        
+        if ResponseHTTP.headers in response and response.headers is not None:
+            for name, value in response.headers.items(): self.send_header(name, value)
+
         self.end_headers()
 
         if ResponseContentHTTP.source in responseCnt and responseCnt.source is not None:

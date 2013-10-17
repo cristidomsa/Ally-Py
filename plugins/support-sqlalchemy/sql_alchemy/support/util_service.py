@@ -175,7 +175,7 @@ def buildQuery(sql, query, Mapped, only=None, exclude=None, orderBy=None, autoJo
 
     return sql
 
-def iterateObjectCollection(sql, offset=None, limit=None, withTotal=False):
+def iterateObjectCollection(sql, offset=None, limit=None, withTotal=False, factorySlice=IterSlice):
     '''
     Iterates the collection of objects from the sql query based on the provided parameters.
     
@@ -190,10 +190,10 @@ def iterateObjectCollection(sql, offset=None, limit=None, withTotal=False):
     if withTotal:
         sqlLimit = buildLimits(sql, offset, limit)
         if limit <= 0: return (), sql.count()
-        return IterSlice(sqlLimit.yield_per(10), sql.count(), offset, limit)
+        return factorySlice(sqlLimit.yield_per(10), sql.count(), offset, limit)
     return sql.yield_per(10)
 
-def iterateCollection(sql, offset=None, limit=None, withTotal=False):
+def iterateCollection(sql, offset=None, limit=None, withTotal=False, factorySlice=IterSlice):
     '''
     Iterates the collection of value from the sql query based on the provided parameters.
     
@@ -208,7 +208,7 @@ def iterateCollection(sql, offset=None, limit=None, withTotal=False):
     if withTotal:
         sqlLimit = buildLimits(sql, offset, limit)
         if limit == 0: return (), sql.count()
-        return IterSlice((value for value, in sqlLimit.all()), sql.count(), offset, limit)
+        return factorySlice((value for value, in sqlLimit.all()), sql.count(), offset, limit)
     return (value for value, in sql.all())
 
 # --------------------------------------------------------------------

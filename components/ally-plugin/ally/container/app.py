@@ -6,7 +6,7 @@ Created on Jan 10, 2013
 @license: http://www.gnu.org/licenses/gpl-3.0.txt
 @author: Gabriel Nistor
 
-Provides the IoC container plugin distribution support.
+Provides the IoC support for application plugins.
 '''
 
 from .event import REPAIR, onDecorator, Trigger, ITrigger

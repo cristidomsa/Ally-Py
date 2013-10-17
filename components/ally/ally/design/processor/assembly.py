@@ -14,7 +14,7 @@ from .execution import Processing
 from .resolvers import resolversFor, checkIf, solve, reportFor
 from .spec import IProcessor, AssemblyError, LIST_UNAVAILABLE
 from abc import ABCMeta  # @UnusedImport
-from ally.design.processor.report import ReportUnused
+from ally.design.processor.report import ReportUnused, ReportNone
 from collections import Iterable
 import logging
 
@@ -112,16 +112,18 @@ class Assembly(Container):
             except ValueError: raise AssemblyError('Invalid processor %s to be removed' % processor)
             del self.processors[index]
 
-    def create(self, **contexts):
+    def createWith(self, contexts=None, report=None):
         '''
         Create a processing based on all the processors in the assembly.
         
-        @param contexts: key arguments of ContextMetaClass
-            Key arguments that have as a value the context classes that the processing chain will be used with.
+        @param contexts: dictionary{string: ContextMetaClass}
+            The contexts to create with.
         @return: Processing
             A processing created based on the current structure of the assembly.
         '''
-        sources, current, extensions, calls, report = resolversFor(contexts), {}, {}, [], ReportUnused()
+        if contexts is None: contexts = {}
+        if report is None: report = ReportNone()
+        sources, current, extensions, calls = resolversFor(contexts), {}, {}, []
         for processor in self.processors:
             assert isinstance(processor, IProcessor), 'Invalid processor %s' % processor
             processor.register(sources, current, extensions, calls, report)
@@ -136,6 +138,20 @@ class Assembly(Container):
         processing = Processing(calls, create(current))
         reportAss = report.open('assembly \'%s\'' % self.name)
         reportAss.add(current)
+
+        return processing
+    
+    def create(self, **contexts):
+        '''
+        Create a processing based on all the processors in the assembly.
+        
+        @param contexts: key arguments of ContextMetaClass
+            Key arguments that have as a value the context classes that the processing chain will be used with.
+        @return: Processing
+            A processing created based on the current structure of the assembly.
+        '''
+        report = ReportUnused()
+        processing = self.createWith(contexts=contexts, report=report)
         
         message = report.report()
         if message: log.info('\n%s\n' % message)

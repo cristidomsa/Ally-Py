@@ -14,6 +14,24 @@ from .spec import IReport, LIST_UNUSED
 
 # --------------------------------------------------------------------
 
+class ReportNone(IReport):
+    '''
+    Implementation for @see: IReport that reports nothing.
+    '''
+        
+    def open(self, name):
+        '''
+        @see: IReport.open
+        '''
+        return self
+        
+    def add(self, resolvers):
+        '''
+        @see: IReport.add
+        '''
+
+# --------------------------------------------------------------------
+
 class ReportUnused(IReport):
     '''
     Implementation for @see: IReport that reports the unused attributes resolvers.
@@ -94,4 +112,3 @@ class ReportUnused(IReport):
             return '\n'.join(messages), []
         elif datas:
             return datas[0]
-        

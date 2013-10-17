@@ -9,8 +9,7 @@ Created on Jan 12, 2012
 Provides the setup implementations for the IoC module.
 '''
 
-from ..error import SetupError, ConfigError
-from ..impl.config import Config
+from ..error import SetupError
 from ._assembly import Setup, Assembly
 from ._call import WithType, WithCall, CallEvent, CallEventOnCount, \
     WithListeners, CallConfig, CallEntity, CallStart, CallEventControlled
@@ -18,9 +17,10 @@ from ally.design.priority import Priority
 from ally.support.util_sys import locationStack
 from collections import Iterable
 from functools import partial
-from inspect import isclass, isfunction, getfullargspec, getdoc
+from inspect import isclass, isfunction, getfullargspec
 from numbers import Number
 import logging
+from pydoc import getdoc
 
 # --------------------------------------------------------------------
 
@@ -156,8 +156,10 @@ class SetupSourceReplace(SetupFunction, WithType):
         assert isinstance(withOriginal, bool), 'Invalid with original flag %s' % withOriginal
         SetupFunction.__init__(self, function, name=target.name, group=target.group, ** keyargs)
         WithType.__init__(self, types)
-        self._withOriginal = withOriginal
+        
+        self.target = target
         self.priority_assemble = target.priority_assemble + 1
+        self._withOriginal = withOriginal
 
     def assemble(self, assembly):
         '''
@@ -231,7 +233,7 @@ class SetupConfig(SetupSource):
         '''
         SetupSource.__init__(self, function, **keyargs)
         self._types = tuple(normalizeConfigType(clazz) for clazz in self._types)
-        self.documentation = getdoc(function)
+        self.__doc__ = getdoc(function)
 
     def index(self, assembly):
         '''
@@ -241,75 +243,7 @@ class SetupConfig(SetupSource):
         if self.name in assembly.calls:
             raise SetupError('There is already a setup call for name %r' % self.name)
 
-        assembly.calls[self.name] = CallConfig(assembly, self.name, self._types)
-
-    def assemble(self, assembly):
-        '''
-        @see: Setup.assemble
-        Checks for aliases to replace.
-        '''
-        assert isinstance(assembly, Assembly), 'Invalid assembly %s' % assembly
-        config = assembly.calls.get(self.name)
-        assert isinstance(config, CallConfig), 'Invalid call configuration %s' % config
-
-        for name, val in assembly.configExtern.items():
-            if name == self.name or self.name.endswith('.' + name):
-                if name in assembly.configUsed:
-                    raise SetupError('The configuration "%s" is already in use and the configuration "%s" cannot use it '
-                                     'again, provide a more detailed path for the configuration (ex: "ally_core.url" '
-                                     'instead of "url")' % (name, self.name))
-                assembly.configUsed.add(name)
-                config.external, config.value = True, val
-
-        if not config.hasValue:
-            try: config.value = self._function()
-            except ConfigError as e: config.value = e
-
-        cfg = assembly.configurations.get(self.name)
-        if not cfg:
-            assembly.configurations[self.name] = Config(self.name, config.value, self.group,
-                                                        self.documentation, not config.external)
-        else:
-            assert isinstance(cfg, Config), 'Invalid configuration %s' % cfg
-            cfg.value = config.value
-            cfg.isCommented = not config.external
-
-class SetupConfigReplace(SetupFunction):
-    '''
-    Provides the setup for replacing a configuration setup function.
-    '''
-
-    def __init__(self, function, target, **keyargs):
-        '''
-        @see: SetupFunction.__init__
-        
-        @param target: SetupFunction
-            The setup name to be replaced.
-        '''
-        assert isinstance(target, SetupConfig), 'Invalid target %s' % target
-        SetupFunction.__init__(self, function, name=target.name, group=target.group, ** keyargs)
-        documentation = getdoc(function)
-        if documentation:
-            if target.documentation: target.documentation += '\n%s' % documentation
-            else: target.documentation = documentation
-        self.target = target
-        self.priority_assemble = target.priority_assemble - 1
-
-    def assemble(self, assembly):
-        '''
-        @see: Setup.assemble
-        '''
-        assert isinstance(assembly, Assembly), 'Invalid assembly %s' % assembly
-        if self.name not in assembly.calls:
-            raise SetupError('There is no setup configuration call for name \'%s\' to be replaced by:%s' % 
-                             (self.name, locationStack(self._function)))
-        config = assembly.calls[self.name]
-        assert isinstance(config, CallConfig), 'Invalid call configuration %s' % config
-        try: config.value = self._function()
-        except ConfigError as e: config.value = e
-
-        assembly.configurations[self.name] = Config(self.name, config.value, self.group,
-                                                    self.target.documentation, not config.external)
+        assembly.calls[self.name] = CallConfig(assembly, self.name, self._function, self.group, self.__doc__, self._types)
 
 class SetupEvent(SetupFunction):
     '''

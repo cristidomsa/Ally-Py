@@ -309,11 +309,11 @@ class RequestHandler(dispatcher, BaseHTTPRequestHandler):
         if ResponseHTTP.text in response and response.text: text = response.text
         elif ResponseHTTP.code in response and response.code: text = response.code
         else: text = None
+        self.send_response(response.status, text)
         
         if ResponseHTTP.headers in response and response.headers is not None:
             for name, value in response.headers.items(): self.send_header(name, value)
             
-        self.send_response(response.status, text)
         self.end_headers()
         
         if ResponseContentHTTP.source in responseCnt and responseCnt.source is not None:

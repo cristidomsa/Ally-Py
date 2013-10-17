@@ -1,7 +1,7 @@
 '''
 Created on Jan 5, 2012
 
-@package: ally core sql alchemy
+@package: support sqlalchemy
 @copyright: 2012 Sourcefabric o.p.s.
 @license: http://www.gnu.org/licenses/gpl-3.0.txt
 @author: Gabriel Nistor
@@ -9,18 +9,16 @@ Created on Jan 5, 2012
 Provides support for SQL alchemy automatic session handling.
 '''
 
-from ally.container.impl.proxy import IProxyHandler, Execution, \
-    registerProxyHandler
-from ally.core.error import DevelError
 from collections import deque
-from inspect import isgenerator
+import logging
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.orm.session import Session
 from threading import current_thread
-import logging
+
+from ally.core.error import DevelError
+
 
 # --------------------------------------------------------------------
-
 log = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------
@@ -167,79 +165,3 @@ def commitNow():
     if session is not None:
         commit(session)
         return True
-
-# --------------------------------------------------------------------
-
-def bindSession(proxy, sessionCreator):
-    '''
-    Binds a session creator wrapping for the provided proxy.
-
-    @param proxy: Proxy
-        The proxy to wrap with session creator.
-    @param sessionCreator: class
-        The session creator class that will create the session.
-    '''
-    registerProxyHandler(SessionBinder(sessionCreator), proxy)
-
-# --------------------------------------------------------------------
-
-class SessionBinder(IProxyHandler):
-    '''
-    Implementation for @see: IProxyHandler for binding sql alchemy session.
-    '''
-    __slots__ = ('sessionCreator',)
-
-    def __init__(self, sessionCreator):
-        '''
-        Binds a session creator wrapping for the provided proxy.
-
-        @param sessionCreator: class
-            The session creator class that will create the session.
-        '''
-        assert sessionCreator is not None, 'Required a session creator'
-        self.sessionCreator = sessionCreator
-
-    def handle(self, execution):
-        '''
-        @see: IProxyHandler.handle
-        '''
-        assert isinstance(execution, Execution), 'Invalid execution %s' % execution
-
-        beginWith(self.sessionCreator)
-        try: returned = execution.invoke()
-        except:
-            endCurrent(rollback)
-            raise
-        else:
-            if hasSession():
-                session = openSession()
-                try:
-                    session.flush()
-                    session.expunge_all()
-                    endCurrent(commit)
-                except:
-                    endCurrent(rollback)
-                    raise
-                
-            elif isgenerator(returned):
-                # If the returned value is a generator we need to wrap it in order to provide session support when the actual
-                # generator is used
-                return self.wrapGenerator(returned)
-
-            return returned
-
-    # ----------------------------------------------------------------
-
-    def wrapGenerator(self, generator):
-        '''
-        Wraps the generator with the session creator.
-        '''
-        assert isgenerator(generator), 'Invalid generator %s' % generator
-        beginWith(self.sessionCreator)
-        try:
-            for item in generator: yield item
-        except:
-            endCurrent(rollback)
-            raise
-        else:
-            endCurrent(commit)

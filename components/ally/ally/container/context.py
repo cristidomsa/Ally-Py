@@ -9,22 +9,26 @@ Created on Jan 8, 2013
 Provides the IoC deployment operations.
 '''
 
-from ._impl._aop import AOPModules
-from ._impl._assembly import Context, Assembly
-from ._impl._setup import CallStart
-from .error import SetupError
-from ally.design.priority import sortByPriorities
-from inspect import ismodule
 import importlib
+from inspect import ismodule
 import logging
 
-# --------------------------------------------------------------------
+from ally.design.priority import sortByPriorities
 
+from ._impl._aop import AOPModules
+from ._impl._assembly import Assembly, Activator
+from ._impl._call import CallConfig
+from ._impl._setup import CallStart
+from .error import SetupError
+from .impl.config import Config
+
+
+# --------------------------------------------------------------------
 log = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------
 
-def open(*modules, config=None, included=False, active=True):
+def open(*modules, included=False):
     '''
     Load and assemble the setup modules and keeps them opened for retrieving and processing values. Call the close
     function after finalization. Automatically activates the assembly.
@@ -37,41 +41,36 @@ def open(*modules, config=None, included=False, active=True):
     @param included: boolean
         Flag indicating that the newly opened assembly should include the currently active assembly, if this flag is
         True then the opened assembly will have access to the current assembly.
-    @param active: boolean
-        If true the assembly will be automatically activate, if false then the assembly is only assembled.
     @return: Assembly
         The assembly object.
     '''
     assert isinstance(included, bool), 'Invalid included flag %s' % included
-    assert isinstance(active, bool), 'Invalid active flag %s' % active
-    context = Context()
+    
+    assembly = Assembly()
     for module in modules:
         if isinstance(module, str): module = importlib.import_module(module)
 
-        if ismodule(module): context.addSetupModule(module)
+        if ismodule(module): assembly.addSetupModule(module)
         elif isinstance(module, AOPModules):
             assert isinstance(module, AOPModules)
-            for m in module.load().asList(): context.addSetupModule(m)
+            for m in module.load().asList(): assembly.addSetupModule(m)
         else: raise SetupError('Cannot use module %s' % module)
     
-    assembly = Assembly(config or {})
     if included: assembly.calls.update(Assembly.current().calls)
-    assembly = context.assemble(assembly)
-    if active: assembly = activate(assembly)
-    return assembly
-    
-def activate(assembly):
+    return assembly.index().assemble()
+
+def activate(assembly, reason):
     '''
     Activates the provided assembly.
     
     @param assembly: Assembly
         The assembly to activate.
-    @return: Assembly
-        The same assembly for chaining purposes.
+    @param action: string
+        The activate reason.
+    @return: Activator
+        The activator to use for save assembly processing.
     '''
-    assert isinstance(assembly, Assembly), 'Invalid assembly %s' % assembly
-    Assembly.stack.append(assembly)
-    return assembly
+    return Activator(assembly, reason)
 
 def processStart(assembly=None):
     '''
@@ -83,10 +82,6 @@ def processStart(assembly=None):
     assembly = assembly or Assembly.current()
     assert isinstance(assembly, Assembly), 'Invalid assembly %s' % assembly
     
-    unused = set(assembly.configExtern)
-    unused = unused.difference(assembly.configUsed)
-    if unused: log.info('Unknown configurations: %s', ', '.join(unused))
-    
     calls = []
     for call in assembly.calls.values():
         if isinstance(call, CallStart):
@@ -95,28 +90,87 @@ def processStart(assembly=None):
     sortByPriorities(calls, priority=lambda call: call.priority)
     for call in calls: assembly.processForName(call.name)
     
-def configurations(assembly=None, force=False):
+def configurationsExtract(assembly=None):
     '''
     Provides the configurations for the assembly.
     
     @param assembly: Assembly|None
         The assembly to provide configurations for, if None the active assembly will be used.
-    @param force: boolean
-        If True will first force the configurations loading.
+    @return: dictionary{string: Config}
+        The extracted configurations.
     '''
     if assembly is None: assembly = Assembly.current()
     assert isinstance(assembly, Assembly), 'Invalid assembly %s' % assembly
-    if force:
-        for config in assembly.configurations: assembly.processForName(config)
-        # Forcing the processing of all configurations
-    return assembly.trimmedConfigurations()
-
-def deactivate():
-    '''
-    Deactivate the ongoing assembly.
     
-    @param count: integer
-        How many times to deactivate.
+    configurations = {}
+    Assembly.stack.append(assembly)
+    try:
+        for name, call in assembly.calls.items():
+            if not isinstance(call, CallConfig): continue
+            if not call.assembly == assembly: continue
+            assert isinstance(call, CallConfig)
+            configurations[name] = call.config()
+    
+    finally: Assembly.stack.pop()
+    
+    def expand(name, sub):
+        ''' Used for expanding configuration names'''
+        if sub: root = name[:-len(sub)]
+        else: root = name
+        if not root: return name
+        if root[-1] == '.': root = root[:-1]
+        k = root.rfind('.')
+        if k < 0: return name
+        if sub: return root[k + 1:] + '.' + sub
+        return root[k + 1:]
+
+    configs, expanded = {}, set()
+    for name, config in configurations.items():
+        assert isinstance(config, Config), 'Invalid configuration %s' % config
+        sname = name[len(config.group) + 1:]
+        other = configs.pop(sname, None)
+        while other or sname in expanded:
+            if other:
+                assert isinstance(other, Config)
+                configs[expand(other.name, sname)] = other
+                expanded.add(sname)
+            sname = expand(name, sname)
+            other = configs.pop(sname, None)
+        configs[sname] = config
+        
+    return configs
+
+def configurationsLoad(configs, assembly=None):
     '''
-    assert Assembly.stack, 'No assembly available for deactivation'
-    Assembly.stack.pop()
+    Updates the configurations for the assembly.
+    
+    @param configs: dictionary{string: object}
+        The configurations to update the assembly with.
+    @param assembly: Assembly|None
+        The assembly to update configurations for, if None the active assembly will be used.
+    '''
+    assert isinstance(configs, dict), 'Invalid configurations %s' % configs
+    if assembly is None: assembly = Assembly.current()
+    assert isinstance(assembly, Assembly), 'Invalid assembly %s' % assembly
+    
+    used = set()
+    Assembly.stack.append(assembly)
+    try:
+        for name, call in assembly.calls.items():
+            if not isinstance(call, CallConfig): continue
+            assert isinstance(call, CallConfig)
+            
+            for name, value in configs.items():
+                if name == call.name or call.name.endswith('.' + name):
+                    if name in used:
+                        raise SetupError('The configuration "%s" is already in use and the configuration "%s" cannot use it '
+                                         'again, provide a more detailed path for the configuration (ex: "ally_core.url" '
+                                         'instead of "url")' % (name, call.name))
+                    used.add(name)
+                    call.setValue(value)
+                    
+    finally: Assembly.stack.pop()
+    
+    unused = set(configs)
+    unused.difference_update(used)
+    if unused: log.info('Unknown configurations: %s', ', '.join(unused))

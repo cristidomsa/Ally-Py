@@ -54,4 +54,4 @@ else:
              'the time zone to render the time stamps in, as an example:\n%(sample)s',
              'the default time zone is %(default)s', sample=sample, default=default_time_zone())
         desc(Name(CONTENT_TIME_ZONE.name),
-             'the same as \'%(name)s\' but for parsed content', name=TIME_ZONE.name)
+             'same as \'%(name)s\' but for parsed content', name=TIME_ZONE.name)

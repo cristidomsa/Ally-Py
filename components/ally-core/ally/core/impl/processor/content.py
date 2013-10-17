@@ -159,8 +159,8 @@ class AssemblerContentHandler(HandlerProcessor):
                 aborted.append(invoker)
             elif inpContent:
                 if invoker.solved is None: invoker.solved = set()
-                invoker.solved.add(inpContent.name)
-                invoker.inputContent = True
+                invoker.solved.add(inpContent)
+                invoker.inputContent = inpContent
                 
         if aborted: raise Abort(*aborted)
 

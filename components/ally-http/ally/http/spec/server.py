@@ -15,7 +15,6 @@ from ally.design.processor.attribute import requires, optional, defines, \
 from ally.design.processor.context import Context
 from ally.support.util_io import IInputStream
 from collections import Iterable
-from ally.design.processor.execution import Processing
 
 # --------------------------------------------------------------------
 
@@ -27,6 +26,7 @@ HTTP_GET = 'GET'
 HTTP_DELETE = 'DELETE'
 HTTP_POST = 'POST'
 HTTP_PUT = 'PUT'
+HTTP_LINK = 'LINK'
 HTTP_OPTIONS = 'OPTIONS'
 
 # --------------------------------------------------------------------

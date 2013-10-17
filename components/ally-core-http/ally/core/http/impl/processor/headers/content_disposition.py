@@ -77,5 +77,5 @@ class ContentDispositionDecodeHandler(HandlerProcessor):
             value, attributes = value[0]
             requestCnt.disposition = value
             requestCnt.dispositionAttr = attributes
-            if self.uploadFilename in attributes:
+            if CONTENT_DISPOSITION_ATTR_FILENAME in attributes:
                 requestCnt.name = attributes[CONTENT_DISPOSITION_ATTR_FILENAME]

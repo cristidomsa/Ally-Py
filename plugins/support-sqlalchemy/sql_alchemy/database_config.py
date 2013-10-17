@@ -17,6 +17,8 @@ from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm.session import sessionmaker
 from sqlalchemy import event
 import logging
+from urllib.parse import urlparse
+import os
 
 # --------------------------------------------------------------------
 
@@ -66,4 +68,14 @@ def metas(): return []
 
 @app.setup(app.DEVEL, priority=PRIORITY_CREATE_TABLES)
 def createTables():
+    if database_url().startswith('sqlite://'):
+        # We need to make sure that the database file has the folders created.
+        url = urlparse(database_url())
+        path = url.path.lstrip('/') 
+        # We need to remove the start slash since in order not to confuse it with a relative path.
+        path = os.path.dirname(path.replace('/', os.sep))
+        if not os.path.exists(path):
+            log.info('Creating folder \'%s\' for SQLite database', path)
+            os.makedirs(path)
+        
     for meta in metas(): meta.create_all(alchemyEngine())

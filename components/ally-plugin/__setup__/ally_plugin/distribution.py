@@ -9,15 +9,16 @@ Created on Feb 6, 2013
 Provides the distribution controlled events for the plugins.
 '''
 
+import logging
+from os.path import isfile
+
 from ally.container import ioc, app, support
 from ally.container.event import ITrigger
 from ally.container.impl.config import load, save, Config
 from ally.design.priority import Priority, PRIORITY_LAST
-from os.path import isfile
-import logging
+
 
 # --------------------------------------------------------------------
-
 log = logging.getLogger(__name__)
 
 PRIORITY_PERSIST_MARKERS = Priority('Persist events markers', before=PRIORITY_LAST)

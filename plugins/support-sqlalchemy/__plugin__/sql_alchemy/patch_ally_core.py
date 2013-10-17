@@ -9,12 +9,15 @@ Created on Aug 30, 2013
 Provides the configurations patch for the processors used in handling the request.
 '''
 
-from ally.container import ioc, app
-from ally.design.processor.handler import Handler
 import logging
 
-# --------------------------------------------------------------------
+from ally.container import ioc, app
+from ally.design.processor.handler import Handler
 
+from .db_application import assemblyAssembler
+
+
+# --------------------------------------------------------------------
 log = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------
@@ -25,12 +28,17 @@ except ImportError: log.info('No ally core component available, thus no need to 
 else:
     from __setup__.ally_core.processor import invoking
     from __setup__.ally_core_http.processor import assemblyResources, updateAssemblyResources
-    from sql_alchemy.impl.processor import transaction_core
+    from __setup__.ally_core.resources import invokerService, processMethod
+    from sql_alchemy.core.impl.processor import transaction_core
     
     @ioc.entity
     def transactionCore() -> Handler: return transaction_core.TransactionCoreHandler()
 
     # ----------------------------------------------------------------
+
+    @ioc.after(assemblyAssembler)
+    def updateAssemblyAssembler():
+        assemblyAssembler().add(invokerService(), processMethod())
 
     @ioc.after(updateAssemblyResources)
     def updateAssemblyResourcesForAlchemy():
