@@ -4,7 +4,7 @@ Created on Feb 27, 2012
 @package: gui action
 @copyright: 2011 Sourcefabric o.p.s.
 @license: http://www.gnu.org/licenses/gpl-3.0.txt
-@author: Mihai Balaceanu
+@author: Mihai Gociu
 
 Action Manager Implementation
 '''
@@ -16,6 +16,7 @@ from gui.action.meta.action import ActionMapped
 from sql_alchemy.impl.entity import EntityNQServiceAlchemy, EntitySupportAlchemy
 from sql_alchemy.support.util_service import iterateCollection, insertModel
 from sqlalchemy.sql.expression import not_
+from sql_alchemy.impl.entity import EntityNQServiceAlchemy, EntitySupportAlchemy
 
 # --------------------------------------------------------------------
 

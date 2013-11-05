@@ -66,9 +66,9 @@ class WithAclAccess:
     def entriesFilters(cls):  # @NoSelf
         cls.EntryFilter = type('%sEntryFilter' % cls.__name__, (cls.__bases__[0], EntryFilterDefinition),
                                dict(_acl_tablename=cls.__tablename__))
-        return relationship(cls.EntryFilter)
+        return relationship(cls.EntryFilter, cascade='delete')
     @declared_attr
     def propertiesFilters(cls):  # @NoSelf
         cls.PropertyFilter = type('%sPropertyFilter' % cls.__name__, (cls.__bases__[0], PropertyFilterDefinition),
                                   dict(_acl_tablename=cls.__tablename__))
-        return relationship(cls.PropertyFilter)
+        return relationship(cls.PropertyFilter, cascade='delete')

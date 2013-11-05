@@ -9,13 +9,9 @@ Created on Aug 30, 2013
 Provides utility methods for SQL alchemy meta definitions.
 '''
 
-from .mapper import mappingFor, tableFor
-from ally.api.operator.type import TypeModel, TypeProperty
-from ally.api.type import typeFor
-from ally.support.util import modifyFirst, toUnderscore
-from ally.support.util_sys import callerLocals
 from collections import OrderedDict
 from inspect import isclass
+import json
 from operator import attrgetter
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -26,11 +22,17 @@ from sqlalchemy.schema import Column, ForeignKey
 from sqlalchemy.sql import expression
 from sqlalchemy.sql.expression import join, select
 from sqlalchemy.types import DateTime, TypeDecorator, String
-import json
+
+from ally.api.operator.type import TypeModel, TypeProperty
+from ally.api.type import typeFor
+from ally.api.validate import Mandatory, Relation, validate
+from ally.support.util import modifyFirst, toUnderscore
+from ally.support.util_sys import callerLocals
+
+from .mapper import columnFor, mappingFor, tableFor
 
 
 # --------------------------------------------------------------------
-
 class JSONEncodedDict(TypeDecorator):
     '''
     Provides a JSON dictionary type encoded.
@@ -96,9 +98,11 @@ def relationshipModel(mappedId, *spec):
         rel = getattr(self, target)
         if rel: return getattr(rel, rtype.propertyId.name)
     
-    def fset(self, value): setattr(self, column, select([mappedId], getattr(mappedId.class_, rtype.propertyId.name) == value))
+    columnId = columnFor(getattr(mappedId.class_, rtype.propertyId.name))
+    def fset(self, value): setattr(self, column, select([mappedId], columnId == value))
     
-    return hybrid_property(fget, fset, expr=joinedExpr(mappedId.class_, rtype.propertyId.name))
+    validation = validate(Mandatory, Relation)
+    return validation(hybrid_property(fget, fset, expr=joinedExpr(mappedId.class_, rtype.propertyId.name)))
 
 # --------------------------------------------------------------------
 

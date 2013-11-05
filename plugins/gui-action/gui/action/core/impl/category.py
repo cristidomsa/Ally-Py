@@ -52,7 +52,6 @@ class ActionCategoryServiceAlchemy(SessionSupport):
         '''
         sql = self.session().query(self.CategoryAction.actionPath).join(self.Category)
         sql = sql.filter(self.CategoryIdentifier == identifier)
-        
         return processCollection(listCompletePaths(path for path, in sql.all()), **options)
     
     def getActionsRoot(self, identifier, **options):
@@ -103,7 +102,7 @@ class ActionCategoryServiceAlchemy(SessionSupport):
         @see: IActionCategoryPrototype.remAction
         '''
         assert isinstance(actionPath, str), 'Invalid action path %s' % actionPath
-        
+
         sql = self.session().query(self.CategoryAction).join(self.Category)
         sql = sql.filter(self.CategoryIdentifier == identifier).filter(self.CategoryAction.actionPath == actionPath)
         

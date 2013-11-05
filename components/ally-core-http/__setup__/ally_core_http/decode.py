@@ -9,9 +9,6 @@ Created on Jun 16, 2013
 Provides the setup for the decode processors.
 '''
 
-from ..ally_core.decode import assemblyDecode, updateAssemblyDecode, \
-    primitiveDecode, definitionIndex, markSolved, updateAssemblyDecodeModel, \
-    assemblyDecodeModel, propertyOfModelDecode, assemblyDecodeExport
 from ally.container import ioc
 from ally.core.http.impl.processor.decoder.create_parameter import \
     CreateParameterHandler
@@ -36,8 +33,12 @@ from ally.core.impl.processor.decoder.general.primitive import \
 from ally.design.processor.assembly import Assembly
 from ally.design.processor.handler import Handler
 
-# --------------------------------------------------------------------
+from ..ally_core.decode import assemblyDecode, updateAssemblyDecode, \
+    primitiveDecode, definitionIndex, markSolved, updateAssemblyDecodeModel, \
+    assemblyDecodeModel, propertyOfModelDecode, assemblyDecodeExport
 
+
+# --------------------------------------------------------------------
 CATEGORY_PARAMETER = 'parameter'
 # The name of the parameters category.
 
@@ -179,7 +180,7 @@ def updateAssemblyDecodeOrder():
 @ioc.before(assemblyDecodeParameterExport)
 def updateAssemblyDecodeParameterExport():
     assemblyDecodeParameterExport().add(assemblyDecodeExport(), primitiveDecodeExport)
-
+    
 # --------------------------------------------------------------------
 
 @ioc.before(assemblyDecodePath)
@@ -187,7 +188,7 @@ def updateAssemblyDecodePath():
     assemblyDecodePath().add(primitiveDecode())
     
 @ioc.after(updateAssemblyDecodeModel)
-def updateAssemblyDecodeModelForPath():
+def updateAssemblyDecodeModelForCoreHTTP():
     assemblyDecodeModel().add(injectedPathDecode(), after=propertyOfModelDecode())
 
 @ioc.before(assemblyDecodePathExport)

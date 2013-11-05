@@ -23,6 +23,7 @@ from ._impl._setup import SetupEntity, SetupSource, SetupConfig, SetupFunction, 
     SetupEvent, SetupEventReplace, SetupSourceReplace, SetupStart, SetupEventCancel, \
     register, setupsOf
 from .error import SetupError
+from ally.container._impl._assembly import Assembly
 
 
 # --------------------------------------------------------------------
@@ -232,24 +233,40 @@ def entityOf(identifier, module=None):
     '''
     assert isinstance(identifier, (str, type)), 'Invalid identifier %s' % identifier
     
-    if module is None: register = callerLocals()
+    if module is None:
+        register = callerLocals()
+        if '__name__' in register:
+            setups = setupsOf(register, SetupSource)
+            group = register['__name__']
+            
+        elif Assembly.stack:
+            assembly = Assembly.current()
+            assert isinstance(assembly, Assembly)
+            setups = [setup for setup in assembly.setups if isinstance(setup, SetupSource)]
+            group = None
+            
+        else:
+            raise SetupError('The entity of call needs to be made directly from the setup module')
     else:
         assert ismodule(module), 'Invalid module %s' % module
-        register = module.__dict__
-    assert isinstance(register, dict), 'Invalid register %s' % register
-    
-    setups = setupsOf(register, SetupSource)
+        setups = setupsOf(module.__dict__, SetupSource)
+        group = module.__name__
+        
     assert setups is not None, 'No setups available in register %s' % register
     
     found = []
     if isinstance(identifier, str):
-        assert '__name__' in register, 'The entity of call needs to be made directly from the setup module'
-        group = register['__name__']
-        if not identifier.startswith('%s.' % group): identifier = '%s.%s' % (group, identifier)
+        if group is None:
+            suffix = '.%s' % identifier
+            for setup in setups:
+                assert isinstance(setup, SetupSource)
+                if setup.name == identifier or setup.name.endswith(suffix): found.append(setup)
+            
+        else:
+            if not identifier.startswith('%s.' % group): identifier = '%s.%s' % (group, identifier)
         
-        for setup in setups:
-            assert isinstance(setup, SetupSource)
-            if isinstance(identifier, str):
+            for setup in setups:
+                assert isinstance(setup, SetupSource)
                 if setup.name == identifier: found.append(setup)
     else:
         assert isclass(identifier), 'Invalid identifier class %s' % identifier

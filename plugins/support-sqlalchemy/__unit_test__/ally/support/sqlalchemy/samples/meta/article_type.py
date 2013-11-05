@@ -11,14 +11,14 @@ Contains the SQL alchemy meta for article type API.
 
 from . import meta
 from ..api.article_type import ArticleType
-from ally.support.sqlalchemy.mapper import mapperModel
 from sqlalchemy.schema import Table, Column
 from sqlalchemy.types import String, Integer
+from sql_alchemy.support.mapper import mapperModel
 
 # --------------------------------------------------------------------
 
 table = Table('article_type', meta,
               Column('id', Integer, primary_key=True, key='Id'),
               Column('name', String(255), nullable=False, unique=True, key='Name'))
-
+ 
 ArticleType = mapperModel(ArticleType, table)

@@ -17,7 +17,7 @@ from ally.design.processor.context import Context
 from ally.design.processor.execution import Chain
 from ally.design.processor.handler import HandlerProcessor, Handler
 from ally.support.api.util_service import copyContainer
-from ally.support.util_context import asData, attributesOf
+from ally.support.util_context import asData, attributesOf, listBFS
 from gui.action.api.action import Action, IActionManagerService
 import logging
 from ally.support.util import modifyFirst
@@ -40,6 +40,7 @@ class Repository(Context):
     The repository context.
     '''
     # ---------------------------------------------------------------- Required
+    children = requires(list)
     actions = requires(list)
 
 class WithTracking(Context):
@@ -48,6 +49,7 @@ class WithTracking(Context):
     '''
     lineNumber = requires(int)
     colNumber = requires(int)
+    uri = requires(str)
 
 class ActionData(Context):
     '''
@@ -70,7 +72,7 @@ class ActionDefinition(ActionData, WithTracking):
 @setup(Handler, name='synchronizeAction')
 class SynchronizeActionHandler(HandlerProcessor):
     '''
-    Implementation for a processor that parses XML files based on digester rules.
+    Implementation for a processor that synchronizes the actions in the configuration file with the database.
     '''
     
     actionManagerService = IActionManagerService; wire.entity('actionManagerService')
@@ -78,7 +80,7 @@ class SynchronizeActionHandler(HandlerProcessor):
     def __init__(self):
         assert isinstance(self.actionManagerService, IActionManagerService), \
         'Invalid action service %s' % self.actionManagerService
-        super().__init__(Repository=Repository)
+        super().__init__(Repository=Repository, Action=ActionDefinition)
         
         # will keep a track of the warnings displayed to avoid displaying the same warning multiple times
         self._warnings = set()
@@ -91,26 +93,29 @@ class SynchronizeActionHandler(HandlerProcessor):
         '''
         assert isinstance(chain, Chain), 'Invalid chain %s' % chain
         assert isinstance(solicit, Solicit), 'Invalid solicit %s' % solicit
-        if solicit.repository is None or solicit.repository.actions is None: return
         assert isinstance(solicit.repository, Repository), 'Invalid repository %s' % solicit.repository
+        
+        groups = listBFS(solicit.repository, Repository.children, Repository.actions)
         
         actionsFromConfig = {}
         # check for actions with the same path -> display warning message
         isWarning = False
-        for action in solicit.repository.actions:
-            if action.path in actionsFromConfig:
-                action1, action2 = action, actionsFromConfig[action.path]
-                diffs = self.compareActions(action1, action2)
-                if diffs:
-                    isWarning = True
-                    warningId = '%s_%s_%s' % (action.path, action1.lineNumber, action2.lineNumber)
-                    if warningId in self._warnings: continue
-                    
-                    log.warning('Attributes: "%s" are different for Action with path="%s" at Line %s and Line %s',
-                                ', '.join(diffs), action1.path, action1.lineNumber, action2.lineNumber)
-                    self._warnings.add(warningId)
-                    
-            else: actionsFromConfig[action.path] = action
+        for repository in groups:
+            assert isinstance(repository, Repository), 'Invalid repository %s' % repository
+            for action in repository.actions:
+                if action.path in actionsFromConfig:
+                    action1, action2 = action, actionsFromConfig[action.path]
+                    diffs = self.compareActions(action1, action2)
+                    if diffs:
+                        isWarning = True
+                        warningId = '%s_%s_%s' % (action.path, action1.lineNumber, action2.lineNumber)
+                        if warningId in self._warnings: continue
+                        
+                        log.warning('Attributes: "%s" are different for Action with path="%s" at Line %s and Line %s',
+                                    ', '.join(diffs), action1.path, action1.lineNumber, action2.lineNumber)
+                        self._warnings.add(warningId)
+                        
+                else: actionsFromConfig[action.path] = action
         # if everything was ok, erase all warnings
         if not isWarning and len(self._warnings) > 0: 
             log.warning('Actions OK')

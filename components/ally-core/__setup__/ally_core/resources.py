@@ -36,6 +36,7 @@ from .decode import assemblyDecode, assemblyDecodeExport, \
     updateAssemblyDecodeExport
 from .definition import definitions
 from .encode import assemblyEncode
+from ally.core.impl.processor.assembler.check_validation import CheckValidationHandler
 
 
 # --------------------------------------------------------------------
@@ -79,6 +80,9 @@ def decoding() -> Handler:
     return b
 
 @ioc.entity
+def checkValidation() -> Handler: return CheckValidationHandler()
+
+@ioc.entity
 def encoding() -> Handler:
     b = EncodingHandler()
     b.encodeAssembly = assemblyEncode()
@@ -104,7 +108,7 @@ def definition() -> Handler:
 @ioc.before(assemblyAssembler)
 def updateAssemblyAssembler():
     assemblyAssembler().add(invokerService(), processMethod(), decoding(), encoding(), assemblerContent(),
-                            validateSolved(), validateHints(), definition())
+                            validateSolved(), validateHints(), checkValidation(), definition())
 
 @ioc.after(updateAssemblyDecodeExport)
 def updateAssemblyDecodeExportForDecoding():

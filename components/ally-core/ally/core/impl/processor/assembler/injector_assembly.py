@@ -15,7 +15,7 @@ from ally.design.processor.attribute import defines, requires
 from ally.design.processor.context import Context, create
 from ally.design.processor.execution import Processing, Chain, Abort, FILL_ALL
 from ally.design.processor.handler import Handler
-from ally.design.processor.report import ReportUnused
+from ally.design.processor.report import ReportUnused, ReportNone
 from ally.design.processor.resolvers import resolversFor, solve, checkIf, \
     reportFor, merge
 from ally.design.processor.spec import IProcessor, LIST_UNAVAILABLE, \
@@ -73,7 +73,8 @@ class InjectorAssemblyHandler(Handler, IProcessor):
         self.extensions = {}
         self.wrappers = {}
         self.calls = []
-        self.report = ReportUnused()
+        if self.assembly.reportUnused: self.report = ReportUnused()
+        else: self.report = ReportNone()
         
         sources = resolversFor(dict(register=Register, Invoker=Invoker))
         for processor in self.assembly.processors:
@@ -145,9 +146,10 @@ class InjectorAssemblyHandler(Handler, IProcessor):
             reportAss = self.report.open('injected assembly \'%s\'' % self.assembly.name)
             reportAss.add(self.resolvers)
             
-            message = self.report.report()
-            if message: log.info('\n%s\n' % message)
-            else: log.info('Nothing to report for \'%s\', everything fits nicely', self.assembly.name)
+            if self.assembly.reportUnused:
+                message = self.report.report()
+                if message: log.info('\n%s\n' % message)
+                else: log.info('Nothing to report for \'%s\', everything fits nicely', self.assembly.name)
             
             # We clean up the data that is not needed anymore
             del self.resolvers

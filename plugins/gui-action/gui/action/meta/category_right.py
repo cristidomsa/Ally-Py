@@ -22,4 +22,4 @@ class RightAction(Base, WithCategoryAction):
     '''
     __tablename__ = 'gui_action_right'
     
-    categoryId = Column('fk_right_id', ForeignKey(RightMapped.Id, ondelete='CASCADE'))
+    categoryId = Column('fk_right_id', ForeignKey(RightMapped.Id, ondelete='CASCADE'), primary_key=True)

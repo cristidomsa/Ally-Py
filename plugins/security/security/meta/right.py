@@ -14,7 +14,6 @@ from .metadata_security import Base
 from .right_type import RightTypeMapped
 from acl.meta.acl import WithAclAccess
 from acl.meta.compensate import WithCompensate
-from sql_alchemy.support.mapper import validate
 from sql_alchemy.support.util_meta import relationshipModel
 from sqlalchemy.dialects.mysql.base import INTEGER
 from sqlalchemy.schema import Column, ForeignKey, UniqueConstraint
@@ -22,7 +21,6 @@ from sqlalchemy.types import String
 
 # --------------------------------------------------------------------
 
-@validate
 class RightMapped(Base, Right):
     '''
     Provides the mapping for Right.
@@ -33,7 +31,7 @@ class RightMapped(Base, Right):
 
     Id = Column('id', INTEGER(unsigned=True), primary_key=True)
     Type = relationshipModel(RightTypeMapped.id)
-    Name = Column('name', String(150), nullable=False, unique=True)
+    Name = Column('name', String(150), nullable=False)
     Description = Column('description', String(255))
 
 class RightAccess(Base, WithAclAccess):

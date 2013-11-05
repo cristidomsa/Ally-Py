@@ -9,35 +9,41 @@ Created on Jan 9, 2012
 Contains the services for the gui core.
 '''
 
-from ally.container import ioc, app, support
+from __setup__.ally.notifier import registersListeners
+from ally.container import ioc, support
 from ally.design.processor.assembly import Assembly
-from ally.design.processor.attribute import defines, requires
-from ally.design.processor.context import Context
-from ally.design.processor.execution import Processing, FILL_ALL
 from ally.design.processor.handler import Handler
 from ally.xml.digester import Node, RuleRoot
+from gui.core.config.impl.processor.configuration_notifier import \
+    ConfigurationListeners
 from gui.core.config.impl.processor.xml.parser import ParserHandler
 from gui.core.config.impl.rules import AccessRule, MethodRule, URLRule, \
-    ActionRule
-from sched import scheduler
-from threading import Thread
-import time
+    ActionRule, DescriptionRule, GroupRule, RightRule
 
 # --------------------------------------------------------------------
-
 # The synchronization processors
-synchronizeAction = support.notCreated  # Just to avoid errors
+synchronizeAction = synchronizeGroups = synchronizeRights = synchronizeGroupActions = synchronizeRightActions =\
+prepareGroupAccesses = prepareRightAccesses = syncCategoryAccesses = syncGroupAccesses = syncRightAccesses = support.notCreated  # Just to avoid errors
 support.createEntitySetup('gui.core.config.impl.processor.synchronize.**.*')
 
 # --------------------------------------------------------------------
 
 @ioc.config
-def names_for_group_access():
+def access_group():
     '''
     Contains the names of the access groups that are expected in the configuration file. Expected properties are name and
     optionally a flag indicating if actions are allowed.
     '''
-    return [dict(name='Anonymous', hasActions=True)]
+    return {
+            'Anonymous': dict(hasActions=True, isAnonymous=True),
+            'Captcha': dict(hasActions=False),
+            'Right': dict(hasActions=True, isRight=True)
+            }
+    
+@ioc.config
+def gui_configuration():
+    ''' The URI pattern (can have * for dynamic path elements) where the XML configurations can be found.'''
+    return ['file://../superdesk/plugins-ui/*/config.xml', 'file://../superdesk/plugins-ui/superdesk/user/config.xml']
 
 # --------------------------------------------------------------------
 
@@ -54,64 +60,51 @@ def parserXML() -> Handler:
     b.rootNode = nodeRootXML()
     return b
 
+@ioc.entity
+def configurationListeners() -> Handler:
+    b = ConfigurationListeners()
+    b.assemblyConfiguration = assemblyConfiguration()
+    b.patterns = gui_configuration()
+    return b
+
 # --------------------------------------------------------------------
+
+@ioc.before(synchronizeGroupActions)
+def updateAccessGroup():
+    synchronizeGroupActions().anonymousGroups = set(name for name, spec in access_group().items()
+                                                    if spec.get('isAnonymous', False))
+
+@ioc.before(synchronizeGroups)
+def updateGroup():
+    synchronizeGroups().anonymousGroups = set(name for name, spec in access_group().items()
+                                                    if spec.get('isAnonymous', False))
 
 @ioc.before(nodeRootXML)
 def updateRootNodeXMLForGroups():
-    for spec in names_for_group_access():
+    for name, spec in access_group().items():
+        assert isinstance(name, str), 'Invalid name %s' % name
         assert isinstance(spec, dict), 'Invalid specifications %s' % spec
-        assert 'name' in spec, 'A group name is required in %s' % (spec,)
-        node = nodeRootXML().obtainNode('Config/%s' % spec['name'])
+        if spec.get('isRight', False): node = nodeRootXML().addRule(RightRule('name', 'inherits'), 'Config/%s' % name)
+        else: node = nodeRootXML().addRule(GroupRule(), 'Config/%s' % name)
         addNodeAccess(node)
+        addNodeDescription(node)
         if spec.get('hasActions', False): addNodeAction(node)
 
 @ioc.before(assemblyConfiguration)
 def updateAssemblyConfiguration():
-    assemblyConfiguration().add(parserXML(), synchronizeAction())
+    assemblyConfiguration().add(parserXML(), synchronizeAction(), synchronizeGroups(), synchronizeRights(), 
+                                synchronizeGroupActions(), synchronizeRightActions(), 
+                                prepareGroupAccesses(), prepareRightAccesses(), syncGroupAccesses(), syncRightAccesses())
 
-@app.deploy
-def cleanup():
-    ''' Start the cleanup process for authentications/sessions'''
-    
-    class TestSolicit(Context):
-        '''
-        The solicit context.
-        '''
-        # ---------------------------------------------------------------- Defined
-        file = defines(str, doc='''
-        @rtype: string
-        The file to be parsed.
-        ''')
-        # ---------------------------------------------------------------- Required
-        repository = requires(Context)
-        
-    proc = assemblyConfiguration().create(solicit=TestSolicit)
-    assert isinstance(proc, Processing)
-    solicit = proc.ctx.solicit(file='acl_right_2.xml')
-    
-    schedule = scheduler(time.time, time.sleep)
-    def executeCleanup():
-        arg = proc.execute(FILL_ALL, solicit=solicit)
-        assert isinstance(arg.solicit, TestSolicit)
-        
-#         print('Actions: ')
-#         if arg.solicit.repository.actions:
-#             for action in arg.solicit.repository.actions:
-#                 print(action)
-#               
-#         print("Filters-Methods-URLs: ")
-#         if arg.solicit.repository.accesses:
-#             for access in arg.solicit.repository.accesses:
-#                 print(access.filters, access.methods, access.urls)
-    
-        schedule.enter(3, 1, executeCleanup, ())
+@ioc.before(registersListeners)
+def updateRegistersListenersForConfiguration():
+    registersListeners().append(configurationListeners())
 
-    schedule.enter(3, 1, executeCleanup, ())
-    scheduleRunner = Thread(name='Configuration scanner', target=schedule.run)
-    scheduleRunner.daemon = True
-    scheduleRunner.start()
-    
 # --------------------------------------------------------------------
+
+def addNodeDescription(node):
+    assert isinstance(node, Node), 'Invalid node %s' % node
+    node.addRule(DescriptionRule(), 'Description')
 
 def addNodeAccess(node):
     assert isinstance(node, Node), 'Invalid node %s' % node

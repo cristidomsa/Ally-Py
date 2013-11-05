@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Config>
+	<Anonymous>
+		<Action path="menux" label="Menu">
+			<Action path="request" label="Request" >
+				<Action path="blob" label="Blob" />
+			</Action>				
+		</Action>
+		<Action path="mucu" label="Mucu" parent="menux" />
+		<Action path="cucu" label="Mucu" parent="menux" />
+		<Action path="bucu" label="Mucu" parent="menux" />
+		<Action path="ducu" label="Mucu" parent="menux" />
+
+		<Allows methods="GET">
+			<URL>ACL/Group/*/Action</URL>
+			<URL>ACL/Group/*/Action/*</URL>
+			<URL>ACL/Group/*/Action/*/SubAction</URL>
+		</Allows>
+	</Anonymous>
+
+	<Captcha>
+		<Allows methods="GET" filter="authenticated">
+			<URL>HR/User/*</URL>
+		</Allows>
+	</Captcha>
+	
+	<Right name="Requests_inspection_1" inherits="Requests_inspection_2">
+		<Actions>
+			<Action path="menu_2" />
+			<Action path="menu_2.request" script="/js/aaa.js">Request</Action>
+		</Actions>
+		<Action path="menu_3" label="Menu">
+			<Action path="request" label="Request" />
+		</Action>
+		<Action path="mucu" label="Mucu" parent="menu_2" />
+
+		<Allows filter="authenticated">
+			<URL>HR/User/*</URL>
+		</Allows>
+
+		<Description>Allows for the viewing of all possible requests that can be made on the REST server, also the plugins and
+			components that are part of the
+			application are also visible.
+		</Description>
+	</Right>
+	
+	<Right name="Requests_inspection_2" inherits="Requests_inspection_3">
+		<Actions>
+			<Action path="menu_2" />
+			<Action path="menu_2.request" script="/js/aaa.js">Request</Action>
+		</Actions>
+		<Action path="menu_3" label="Menu">
+			<Action path="request" label="Request" />
+		</Action>
+		<Action path="mucu" label="Mucu" parent="menu_2" />
+
+		<Allows filter="authenticated">
+			<URL>ACL/Group/*/Action</URL>
+			<URL>ACL/Group/*</URL>
+		</Allows>
+
+		<Description>Allows for the viewing of all possible requests that can be made on the REST server, also the plugins and
+			components that are part of the
+			application are also visible.
+		</Description>
+	</Right>
+	
+	<Right name="Requests_inspection_3">
+		<Actions>
+			<Action path="menu_2" />
+			<Action path="menu_2.request" script="/js/aaa.js">Request</Action>
+		</Actions>
+		<Action path="menu_3" label="Menu">
+			<Action path="request" label="Request" />
+		</Action>
+		<Action path="bucu" label="Mucu" parent="menu_2" />
+
+		<Allows filter="authenticated">
+			<URL>ACL/Group/*/Action</URL>
+			<URL>ACL/Group/*</URL>
+			<URL>HR/User/*</URL>
+		</Allows>
+
+		<Description>Allows for the viewing of all possible requests that can be made on the REST server, also the plugins and
+			components that are part of the
+			application are also visible.
+		</Description>
+	</Right>
+	
+
+</Config>

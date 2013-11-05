@@ -173,6 +173,7 @@ def _extendPackagePaths(package):
         importers = iter_importers()
 
     for importer in importers:
+        if importer is None: continue
         moduleLoader = importer.find_module(name)
         if moduleLoader and moduleLoader.is_package(name):
             path = os.path.dirname(moduleLoader.get_filename(name))

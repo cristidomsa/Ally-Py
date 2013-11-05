@@ -19,6 +19,8 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.schema import Column, ForeignKey
 from sqlalchemy.types import String
+from ally.api.validate import Mandatory, MaxLen, validate
+from sql_alchemy.support.mapper import columnFor
 
 # --------------------------------------------------------------------
 
@@ -64,6 +66,7 @@ class WithPath:
     pathId = declared_attr(lambda cls: Column('fk_path_id', ForeignKey(Path.id, ondelete='RESTRICT'), nullable=False))
     path = declared_attr(lambda cls: relationship(Path, lazy='joined', uselist=False, viewonly=True))
 
+    @validate(Mandatory, lambda prop: MaxLen(prop, columnFor(Path.path).type.length))
     @hybrid(expr=joinedExpr(Path, 'path'))
     def Path(self):
         if self.path: return self.path.path
@@ -96,6 +99,7 @@ class WithMethod:
     methodId = declared_attr(lambda cls: Column('fk_method_id', ForeignKey(Method.id, ondelete='RESTRICT'), nullable=False))
     method = declared_attr(lambda cls: relationship(Method, lazy='joined', uselist=False, viewonly=True))
     
+    @validate(Mandatory, lambda prop: MaxLen(prop, columnFor(Method.name).type.length))
     @hybrid(expr=joinedExpr(Method, 'name'))
     def Method(self):
         if self.method: return self.method.name
@@ -127,7 +131,7 @@ class WithSignature:
     @classmethod
     def createSignature(cls):
         '''
-        Create the signature name link.
+        Create the signature name link, only one can be created.
         '''
         
         def fget(self):
@@ -147,5 +151,6 @@ class WithSignature:
                 session.flush((signature,))
                 signatureId = signature.id
             self.signatureId = signatureId
-            
-        return hybrid_property(fget, fset, expr=joinedExpr(Signature, 'name'))
+        
+        validation = validate(Mandatory, lambda prop: MaxLen(prop, columnFor(Signature.name).type.length))
+        return validation(hybrid_property(fget, fset, expr=joinedExpr(Signature, 'name')))

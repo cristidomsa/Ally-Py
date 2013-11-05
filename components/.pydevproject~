@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?eclipse-pydev version="1.0"?><pydev_project>
+
+<pydev_pathproperty name="org.python.pydev.PROJECT_SOURCE_PATH">
+<path>/components/ally-http-asyncore-server</path>
+<path>/components/ally-http-mongrel2-server</path>
+<path>/components/service-cdm</path>
+<path>/components/ally-http</path>
+<path>/components/ally-api</path>
+<path>/components/ally-core</path>
+<path>/components/ally-core-http</path>
+<path>/components/ally</path>
+<path>/components/service-gateway</path>
+<path>/components/ally-plugin</path>
+<path>/components/service-assemblage</path>
+<path>/components/ally-indexing</path>
+<path>/components/service-gateway-recaptcha</path>
+</pydev_pathproperty>
+
+
+<pydev_property name="org.python.pydev.PYTHON_PROJECT_VERSION">python 3.0</pydev_property>
+<pydev_property name="org.python.pydev.PYTHON_PROJECT_INTERPRETER">python3.2</pydev_property>
+
+<pydev_pathproperty name="org.python.pydev.PROJECT_EXTERNAL_SOURCE_PATH">
+<path>/home/mihaigociu/Work/workspace/Ally-Py/distribution/libraries/PyYAML-3.10.egg</path>
+<path>/home/mihaigociu/Work/workspace/Ally-Py/distribution/libraries/Babel-1.0dev-py3.2</path>
+<path>/home/chupy/rest_api/distribution/libraries/pytz-2012d-py3.2</path>
+<path>/home/chupy/rest_api/distribution/tools/distribute-0.6.27-py3.2.egg</path>
+<path>/home/chupy/rest_api/plugins/gateway</path>
+<path>/home/chupy/rest_api/distribution/libraries/SQLAlchemy-0.7.1-py3.2.egg</path>
+</pydev_pathproperty>
+
+</pydev_project>

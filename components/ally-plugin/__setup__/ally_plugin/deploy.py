@@ -59,11 +59,14 @@ def preparePreferences():
     application.parser = parser
 
 # --------------------------------------------------------------------
-     
+
 @ioc.after(dump)
 def dumpPlugins():
     if not options.isFlag(FLAG_DUMP): return
-    saveConfigurations(context.configurationsExtract(plugins()))
+    with activate(plugins(), 'events'):
+        context.configurationsLoad(configurations())
+        support.performEventsFor(app.DUMP)
+        saveConfigurations(context.configurationsExtract())
 
 @ioc.start(priority=PRIORITY_DEPLOY)
 def start():

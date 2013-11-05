@@ -13,7 +13,7 @@ from datetime import datetime
 
 from ally.api.type import typeFor
 from ally.container import ioc
-from ally.core.impl.definition import ModelId, PropertyType
+from ally.core.impl.definition import ModelId, PropertyType, MaximumLength
 
 from ..ally_core.processor import converter
 from .definition import descriptions, desc, categories, category
@@ -28,8 +28,10 @@ def updateCategoriesForContent():
 
 @ioc.before(descriptions)
 def updateDescriptionsForContent():
-    desc(ModelId(), 'represents the model id') # This is based on @see: modelDecode()
-    desc(PropertyType(datetime), 'example %(sample)s', sample=converter().asString(datetime(1982, 1, 18, 2, 40, 12), typeFor(datetime)))
+    desc(ModelId(), 'represents the model id')  # This is based on @see: modelDecode()
+    desc(PropertyType(datetime), 'example %(sample)s', sample=converter().asString(datetime(1982, 1, 18, 2, 40, 12),
+                                                                                   typeFor(datetime)))
+    desc(MaximumLength(), 'maximum text size is %(length)s characters long', length=MaximumLength())
 
     # TODO: Gabriel: Add more content definitions
 

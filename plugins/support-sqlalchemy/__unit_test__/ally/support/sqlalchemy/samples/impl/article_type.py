@@ -11,7 +11,7 @@ SQL alchemy implementation for article type API.
 
 from ..api.article_type import IArticleTypeService, QArticleType
 from ..meta.article_type import ArticleType
-from .entity import EntityServiceAlchemy
+from sql_alchemy.impl.entity import EntityServiceAlchemy
 
 # --------------------------------------------------------------------
 

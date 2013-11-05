@@ -15,7 +15,7 @@ from ally.api.type import Iter, Boolean, Integer, Number, String, Time, Date, \
     DateTime, Type
 from ally.container.ioc import injected
 from ally.design.processor.assembly import Assembly
-from ally.design.processor.attribute import requires, defines
+from ally.design.processor.attribute import requires, defines, optional
 from ally.design.processor.branch import Branch
 from ally.design.processor.context import Context
 from ally.design.processor.execution import Processing, CONSUMED, Abort
@@ -59,6 +59,8 @@ class Decoding(Context):
     @param value: object
         The value to be decoded.
     ''')
+    # ---------------------------------------------------------------- Optional
+    isMandatory = optional(bool)
     # ---------------------------------------------------------------- Required
     type = requires(Type)
     doSet = requires(IDo)
@@ -175,14 +177,22 @@ class ModelDecode(HandlerBranching):
             
             if not isinstance(value, dict): addFailure(target, decoding, value=value)
             else:
+                decodings = dict(decoding.children)
                 for pname, pvalue in value.items():
-                    cdecoding = decoding.children.get(pname)
+                    cdecoding = decodings.pop(pname, None)
                     if not cdecoding:
                         addFailure(target, decoding, value=pname)
                         continue
                     assert isinstance(cdecoding, Decoding), 'Invalid decoding %s' % cdecoding
                     assert isinstance(cdecoding.doDecode, IDo), 'Invalid decode %s' % cdecoding.doDecode
                     cdecoding.doDecode(target, pvalue)
+                
+                if decodings:
+                    for name, cdecoding in decodings.items():
+                        assert isinstance(cdecoding, Decoding), 'Invalid decoding %s' % cdecoding
+                        if Decoding.isMandatory in cdecoding and cdecoding.isMandatory:
+                            addFailure(target, decoding, 'Expected a value for \'%(name)s\'', name=name)
+                
         return doDecode
     
     # --------------------------------------------------------------------

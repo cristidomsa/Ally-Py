@@ -9,9 +9,13 @@ Created on Aug 24, 2012
 Provides the text base parser processor handler.
 '''
 
+import abc
+import logging
+
+from ally.api.error import InputError
 from ally.container.ioc import injected
 from ally.core.impl.processor.base import ErrorResponse, addError
-from ally.core.spec.codes import CONTENT_BAD, CONTENT_MISSING
+from ally.core.spec.codes import CONTENT_BAD, CONTENT_MISSING, INPUT_ERROR
 from ally.design.processor.attribute import requires, optional
 from ally.design.processor.context import Context
 from ally.design.processor.execution import Chain
@@ -19,11 +23,9 @@ from ally.design.processor.handler import HandlerProcessor
 from ally.support.util_context import findFirst
 from ally.support.util_io import IInputStream, IClosable
 from ally.support.util_spec import IDo
-import abc
-import logging
+
 
 # --------------------------------------------------------------------
-
 log = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------
@@ -120,24 +122,30 @@ class ParseBaseHandler(HandlerProcessor):
         assert isinstance(requestCnt.source, IInputStream), 'Invalid request content stream %s' % requestCnt.source
         assert isinstance(requestCnt.charSet, str), 'Invalid request content character set %s' % requestCnt.charSet
         
-        self.parse(requestCnt.source, requestCnt.charSet, decoding, target)
-        
-        if target.failures:
-            CONTENT_BAD.set(response)
+        try: self.parse(requestCnt.source, requestCnt.charSet, decoding, target)
+        except InputError as e:
+            assert isinstance(e, InputError)
+            INPUT_ERROR.set(response)
+            response.errorInput = e
+            assert log.debug('User input exception: %s', e, exc_info=True) or True
             
-            for name, definitions, values, messages in self.indexFailures(target.failures):
-                if values:
-                    if name: messages.append('Invalid values \'%(values)s\' for \'%(name)s\'')
-                    else: messages.append('Invalid values \'%(values)s\'')
+        else:
+            if target.failures:
+                CONTENT_BAD.set(response)
                 
-                addError(response, messages, definitions, name=name, values=values)
-                
-                if not name:
-                    defins = []
-                    for defin in request.invoker.definitions:
-                        assert isinstance(defin, Definition), 'Invalid definition %s' % defin
-                        if defin.category == self.category: defins.append(defin)
-                    if defins: addError(response, 'The available content', defins)
+                for name, definitions, values, messages in self.indexFailures(target.failures):
+                    if values:
+                        if name: messages.append('Invalid values \'%(values)s\' for \'%(name)s\'')
+                        else: messages.append('Invalid values \'%(values)s\'')
+                    
+                    addError(response, messages, definitions, name=name, values=values)
+                    
+                    if not name:
+                        defins = []
+                        for defin in request.invoker.definitions:
+                            assert isinstance(defin, Definition), 'Invalid definition %s' % defin
+                            if defin.category == self.category: defins.append(defin)
+                        if defins: addError(response, 'The available content', defins)
             
         if isinstance(requestCnt.source, IClosable): requestCnt.source.close()
 

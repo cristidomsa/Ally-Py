@@ -20,11 +20,13 @@ from security.meta.right_type import RightTypeMapped
 from sql_alchemy.impl.entity import EntityGetServiceAlchemy, \
     EntityCRUDServiceAlchemy, EntitySupportAlchemy
 from sql_alchemy.support.util_service import buildQuery, iterateCollection
+from ally.api.validate import validate
 
 # --------------------------------------------------------------------
 
 @injected
 @setup(IRightService, name='rightService')
+@validate(RightMapped)
 class RightServiceAlchemy(EntityGetServiceAlchemy, EntityCRUDServiceAlchemy, AclServiceAlchemy, CompensateServiceAlchemy,
                           IRightService):
     '''

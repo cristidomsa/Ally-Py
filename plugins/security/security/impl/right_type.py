@@ -14,11 +14,13 @@ from ..meta.right_type import RightTypeMapped
 from ally.container.ioc import injected
 from ally.container.support import setup
 from sql_alchemy.impl.entity import EntityNQServiceAlchemy
+from ally.api.validate import validate
 
 # --------------------------------------------------------------------
 
 @injected
 @setup(IRightTypeService, name='rightTypeService')
+@validate(RightTypeMapped)
 class RightTypeServiceAlchemy(EntityNQServiceAlchemy, IRightTypeService):
     '''
     Implementation for @see: IRightTypeService.

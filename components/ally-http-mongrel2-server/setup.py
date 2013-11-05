@@ -16,20 +16,20 @@ from setuptools import setup, find_packages
 
 # --------------------------------------------------------------------
 
-setup(package_data={'': ['*.txt', '*.conf']},
-name='ally-http-mongrel2-server',
-author='Gabriel Nistor',
-install_requires=['ally-http >= 1.0'],
-long_description='Similar to the asyncore server but provides support for using \n0MQ messaging in order to communicate with Mongrel2 HTTP server.',
-author_email='gabriel.nistor@sourcefabric.org',
-version='1.0',
-test_suite='__unit_test__',
-keywords=['Ally', 'REST', 'HTTP,mongrel2', 'server'],
-classifiers=['Development Status :: 4 - Beta'],
-description='Provides the HTTP mongrel2 server',
-packages=find_packages('.'),
-      platforms=['all'],
-      zip_safe=True,
-      license='GPL v3',
-      url='http://www.sourcefabric.org/en/superdesk/', # project home page
-      )
+setup(packages=find_packages('.'),
+     platforms=['all'],
+     zip_safe=True,
+     license='GPL v3',
+     url='http://www.sourcefabric.org/en/superdesk/', # project home page     package_data={'': ['*.txt', '*.conf']},
+     description='Provides the HTTP mongrel2 server',
+     author='Gabriel Nistor',
+     install_requires=['ally-http >= 1.0'],
+     long_description='Similar to the asyncore server but provides support for using \n0MQ messaging in order to communicate with Mongrel2 HTTP server.',
+     author_email='gabriel.nistor@sourcefabric.org',
+     version='1.0',
+     test_suite='__unit_test__',
+     keywords=['Ally', 'REST', 'HTTP,mongrel2', 'server'],
+     classifiers=['Development Status :: 4 - Beta'],
+     name='ally-http-mongrel2-server',
+
+     )

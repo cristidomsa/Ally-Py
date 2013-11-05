@@ -17,12 +17,9 @@ from ally.http.spec.codes import METHOD_NOT_AVAILABLE, PATH_NOT_FOUND, \
     PATH_FOUND, CodedHTTP
 from ally.http.spec.server import HTTP_GET
 from ally.support.util_io import IInputStream
-from ally.zip.util_zip import normOSPath, normZipPath
 from mimetypes import guess_type
-from os.path import isdir, isfile, join, dirname, normpath, sep
+from os.path import isdir, isfile, join, normpath
 from urllib.parse import unquote
-from zipfile import ZipFile
-import json
 import logging
 import os
 
@@ -81,27 +78,23 @@ class ContentDeliveryHandler(HandlerProcessor):
     Implementation for a processor that delivers the content based on the URL.
     '''
 
-    repositoryPath = str
+    repositoryPaths = list
     # The directory where the file repository is
     defaultContentType = 'application/octet-stream'
     # The default mime type to set on the content response if None could be guessed
-    _linkExt = '.link'
-    # Extension to mark the link files in the repository.
-    _zipHeader = 'ZIP'
-    # Marker used in the link file to indicate that a link is inside a zip file.
-    _fsHeader = 'FS'
-    # Marker used in the link file to indicate that a link is file system
 
     def __init__(self):
-        assert isinstance(self.repositoryPath, str), 'Invalid repository path value %s' % self.repositoryPath
+        assert isinstance(self.repositoryPaths, list), 'Invalid repository paths value %s' % self.repositoryPaths
         assert isinstance(self.defaultContentType, str), 'Invalid default content type %s' % self.defaultContentType
-        self.repositoryPath = normpath(self.repositoryPath)
-        if not os.path.exists(self.repositoryPath): os.makedirs(self.repositoryPath)
-        assert isdir(self.repositoryPath) and os.access(self.repositoryPath, os.R_OK), \
-            'Unable to access the repository directory %s' % self.repositoryPath
+        self.repositoryPaths = [ normpath(path) for path in self.repositoryPaths ]
+        if __debug__:
+            for path in self.repositoryPaths:
+                assert isinstance(path, str), 'Invalid repository path value %s' % path
+                if not isdir(path):
+                    log.warning('Directory %s does not exist', path)
+                    if not os.access(path, os.R_OK):
+                        log.warning('Unable to access the repository directory %s', path)
         super().__init__()
-
-        self._linkTypes = {self._fsHeader:self._processLink, self._zipHeader:self._processZiplink}
 
     def process(self, chain, request:Request, response:Response, responseCnt:ResponseContent, **keyargs):
         '''
@@ -117,87 +110,25 @@ class ContentDeliveryHandler(HandlerProcessor):
             if response.allows is not None: response.allows.add(HTTP_GET)
             else: response.allows = set((HTTP_GET,))
             METHOD_NOT_AVAILABLE.set(response)
-        else:
+            return
+
+        # Initialize the read file handler with None value
+        # This will be set upon successful file open
+        rf, size = None, None
+        for repositoryPath in self.repositoryPaths:
+            entryPath = normpath(join(repositoryPath, unquote(request.uri)))
             # Make sure the given path points inside the repository
-            entryPath = normOSPath(join(self.repositoryPath, normZipPath(unquote(request.uri))))
-            if not entryPath.startswith(self.repositoryPath): PATH_NOT_FOUND.set(response)
-            else:
-                # Initialize the read file handler with None value
-                # This will be set upon successful file open
-                rf = None
-                if isfile(entryPath):
-                    rf, size = open(entryPath, 'rb'), os.path.getsize(entryPath)
-                else:
-                    linkPath = entryPath
-                    while len(linkPath) > len(self.repositoryPath):
-                        if isfile(linkPath + self._linkExt):
-                            with open(linkPath + self._linkExt) as f: links = json.load(f)
-                            subPath = normOSPath(entryPath[len(linkPath):]).lstrip(sep)
-                            for linkType, *data in links:
-                                if linkType in self._linkTypes:
-                                    # make sure the subpath is normalized and uses the OS separator
-                                    if not self._isPathDeleted(join(linkPath, subPath)):
-                                        entry = self._linkTypes[linkType](subPath, *data)
-                                        if entry is not None:
-                                            rf, size = entry
-                                            break
-                            break
-                        subLinkPath = dirname(linkPath)
-                        if subLinkPath == linkPath:
-                            break
-                        linkPath = subLinkPath
-        
-                if rf is None: PATH_NOT_FOUND.set(response)
-                else:
-                    PATH_FOUND.set(response)
-                    responseCnt.source = rf
-                    responseCnt.length = size
-                    responseCnt.type, responseCnt.charSet = guess_type(entryPath)
-                    if not responseCnt.type: responseCnt.type = self.defaultContentType
-                    return
-
-    # ----------------------------------------------------------------
-
-    def _processLink(self, subPath, linkedFilePath):
-        '''
-        Reads a link description file and returns a file handler to
-        the linked file.
-        '''
-        # make sure the file path uses the OS separator
-        linkedFilePath = normOSPath(linkedFilePath)
-        if isdir(linkedFilePath):
-            resPath = join(linkedFilePath, subPath)
-        elif not subPath:
-            resPath = linkedFilePath
+            if not entryPath.startswith(repositoryPath):
+                break
+            elif isfile(entryPath):
+                rf, size = open(entryPath, 'rb'), os.path.getsize(entryPath)
+    
+        if rf is None:
+            PATH_NOT_FOUND.set(response)
         else:
-            return None
-        if isfile(resPath):
-            return open(resPath, 'rb'), os.path.getsize(resPath)
-
-    def _processZiplink(self, subPath, zipFilePath, inFilePath):
-        '''
-        Reads a link description file and returns a file handler to
-        the linked file inside the ZIP archive.
-        '''
-        # make sure the ZIP file path uses the OS separator
-        zipFilePath = normOSPath(zipFilePath)
-        # convert the internal ZIP path to OS format in order to use standard path functions
-        inFilePath = normOSPath(inFilePath)
-        zipFile = ZipFile(zipFilePath)
-        # resource internal ZIP path should be in ZIP format
-        resPath = normZipPath(join(inFilePath, subPath))
-        if resPath in zipFile.NameToInfo:
-            return zipFile.open(resPath, 'r'), zipFile.getinfo(resPath).file_size
-
-    def _isPathDeleted(self, path):
-        '''
-        Returns true if the given path was deleted or was part of a directory
-        that was deleted.
-        '''
-        path = normpath(path)
-        while len(path) > len(self.repositoryPath):
-            if isfile(path + '.deleted'): return True
-            subPath = dirname(path)
-            if subPath == path: break
-            path = subPath
-        return False
+            PATH_FOUND.set(response)
+            responseCnt.source = rf
+            responseCnt.length = size
+            responseCnt.type, responseCnt.charSet = guess_type(entryPath)
+            if not responseCnt.type: responseCnt.type = self.defaultContentType
+            return

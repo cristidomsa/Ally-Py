@@ -9,18 +9,18 @@ Created on Jan 28, 2013
 Contains the SQL alchemy meta for ACL access.
 '''
 
-from ..api.access import Access, Entry, Property
+from ..api.access import Entry, Property, Access
 from .acl_intern import WithMethod, WithPath, WithSignature
 from .metadata_acl import Base
-from sql_alchemy.support.mapper import validate
 from sqlalchemy.dialects.mysql.base import INTEGER
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.schema import Column, ForeignKey, UniqueConstraint
 from sqlalchemy.types import String
+from ally.api.validate import ReadOnly, validate
 
 # --------------------------------------------------------------------
 
-@validate
+@validate(ReadOnly(Access.Id))
 class AccessMapped(Base, WithPath, WithMethod, WithSignature, Access):
     '''
     Provides the ACL access mapping.
@@ -35,7 +35,6 @@ class AccessMapped(Base, WithPath, WithMethod, WithSignature, Access):
     Output = WithSignature.createSignature()
     Hash = Column('hash', String(50), nullable=False, unique=True)
 
-@validate
 class EntryMapped(Base, WithSignature, Entry):
     '''
     Provides the ACL access entry mapping.
@@ -51,7 +50,6 @@ class EntryMapped(Base, WithSignature, Entry):
     id = Column('id', INTEGER(unsigned=True), primary_key=True)
     accessId = Column('fk_access_id', ForeignKey(AccessMapped.Id, ondelete='CASCADE'), nullable=False)
     
-@validate
 class PropertyMapped(Base, WithSignature, Property):
     '''
     Provides the ACL access property mapping.

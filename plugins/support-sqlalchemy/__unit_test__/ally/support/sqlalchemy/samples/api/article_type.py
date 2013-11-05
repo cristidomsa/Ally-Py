@@ -9,9 +9,9 @@ Created on Aug 25, 2011
 API specifications for article type.
 '''
 
-from .entity import Entity, IEntityService
 from ally.api.config import model, service, query
 from ally.api.criteria import AsLikeOrdered
+from ally.support.api.entity_ided import Entity, IEntityService
 
 # --------------------------------------------------------------------
 
@@ -20,6 +20,7 @@ class ArticleType(Entity):
     '''
     Provides the article type model.
     '''
+    Id = int
     Name = str
 
 # --------------------------------------------------------------------

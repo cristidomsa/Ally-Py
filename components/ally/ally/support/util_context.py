@@ -9,14 +9,17 @@ Created on Jul 18, 2013
 Provides utility functions for processor contexts.
 '''
 
-from .util import Singletone
+import abc
+from collections import Iterable
+
 from ally.design.processor.context import Context, Object, attributeOf
 from ally.design.processor.spec import ContextMetaClass, IAttribute, IResolver
-from collections import Iterable
-import abc
+from collections import deque
+
+from .util import Singletone
+
 
 # --------------------------------------------------------------------
-
 class IPrepare(metaclass=abc.ABCMeta):
     '''
     Specification for classes that perform different actions that require context classes. 
@@ -173,6 +176,38 @@ def cloneCollection(value):
     return value
 
 # --------------------------------------------------------------------
+
+def listBFS(context, children, search=None):   
+    '''
+    Method that does a Breadth First Search in a Context tree structure and extracts the nodes that have a particular attribute.
+    Since we'll be using a queue for the BFS, make sure the structure really is a tree (there are no back 
+    references) otherwise  you'll end in an infinite loop.
+    
+    @param context: The context representing the root node. 
+    @param children: The attribute representing the list of children of the context.
+    @param search: The attribute to search for.
+    '''
+    assert isinstance(context, Context), 'Invalid context %s' % context
+    cattr = attributeOf(children)
+    assert isinstance(cattr, IAttribute), 'Invalid children attribute %s' % children
+    if search:
+        sattr = attributeOf(search)
+        assert isinstance(sattr, IAttribute), 'Invalid search attribute %s' % search
+    else: sattr = None
+    
+    nodes = []
+    queue = deque([context])
+    while queue:
+        context = queue.popleft()
+        if sattr:
+            if sattr in context and getattr(context, sattr.__name__) is not None: nodes.append(context)
+        else: nodes.append(context)
+        
+        if cattr in context:
+            children = getattr(context, cattr.__name__)
+            if children: queue.extend(children)
+    
+    return nodes
 
 def iterate(context, nextCall, maximum=1000):
     '''

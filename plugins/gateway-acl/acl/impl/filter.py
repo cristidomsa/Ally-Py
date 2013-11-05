@@ -17,11 +17,13 @@ from ally.container.support import setup
 from sql_alchemy.impl.entity import EntityGetServiceAlchemy, \
     EntityQueryServiceAlchemy, EntitySupportAlchemy
 from sql_alchemy.support.util_service import deleteModel, insertModel
+from ally.api.validate import validate
     
 # --------------------------------------------------------------------
 
 @injected
 @setup(IFilterService, name='filterService')
+@validate(FilterMapped)
 class FilterServiceAlchemy(EntityGetServiceAlchemy, EntityQueryServiceAlchemy, IFilterService):
     '''
     Implementation for @see: IFilterService that provides the ACL filters.

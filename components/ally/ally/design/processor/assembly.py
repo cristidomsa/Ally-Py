@@ -41,16 +41,20 @@ class Assembly(Container):
     The assembly provides a container for the processors.
     '''
     
-    def __init__(self, name):
+    def __init__(self, name, reportUnused=True):
         '''
         Constructs the assembly.
         
         @param name: string
             The name of the assembly mainly used for reporting purposes.
+        @param reportUnused: boolean
+            Flag indicating that the unused attributes in the assembly should be reported.
         '''
         assert isinstance(name, str), 'Invalid name %s' % name
+        assert isinstance(reportUnused, bool), 'Invalid flag %s' % reportUnused
         super().__init__()
         self.name = name
+        self.reportUnused = reportUnused
 
     def add(self, *processors, before=None, after=None):
         '''
@@ -112,17 +116,17 @@ class Assembly(Container):
             except ValueError: raise AssemblyError('Invalid processor %s to be removed' % processor)
             del self.processors[index]
 
-    def createWith(self, contexts=None, report=None):
+    def create(self, **contexts):
         '''
         Create a processing based on all the processors in the assembly.
         
-        @param contexts: dictionary{string: ContextMetaClass}
-            The contexts to create with.
+        @param contexts: key arguments of ContextMetaClass
+            Key arguments that have as a value the context classes that the processing chain will be used with.
         @return: Processing
             A processing created based on the current structure of the assembly.
         '''
-        if contexts is None: contexts = {}
-        if report is None: report = ReportNone()
+        if self.reportUnused: report = ReportUnused()
+        else: report = ReportNone()
         sources, current, extensions, calls = resolversFor(contexts), {}, {}, []
         for processor in self.processors:
             assert isinstance(processor, IProcessor), 'Invalid processor %s' % processor
@@ -138,24 +142,11 @@ class Assembly(Container):
         processing = Processing(calls, create(current))
         reportAss = report.open('assembly \'%s\'' % self.name)
         reportAss.add(current)
-
-        return processing
-    
-    def create(self, **contexts):
-        '''
-        Create a processing based on all the processors in the assembly.
         
-        @param contexts: key arguments of ContextMetaClass
-            Key arguments that have as a value the context classes that the processing chain will be used with.
-        @return: Processing
-            A processing created based on the current structure of the assembly.
-        '''
-        report = ReportUnused()
-        processing = self.createWith(contexts=contexts, report=report)
-        
-        message = report.report()
-        if message: log.info('\n%s\n' % message)
-        else: log.info('Nothing to report for \'%s\', everything fits nicely', self.name)
+        if self.reportUnused:
+            message = report.report()
+            if message: log.info('\n%s\n' % message)
+            else: log.info('Nothing to report for \'%s\', everything fits nicely', self.name)
         return processing
 
     # ----------------------------------------------------------------

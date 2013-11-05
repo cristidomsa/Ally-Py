@@ -19,6 +19,8 @@ from itertools import chain
 REPAIR = REPAIR
 SETUP = Trigger('setup')
 # Trigger used for controlled event setup that is called in order to provide component setup.
+DUMP = Trigger('dump')
+# Trigger used for controlled event setup that is called when the configurations are dumped..
 
 DEPLOY = Trigger('deploy') 
 # Trigger used for controlled event setup that is called on application deploy.
@@ -69,6 +71,21 @@ def deploy(*triggers, priority=PRIORITY_NORMAL):
     if not triggers: return onDecorator((DEPLOY,), priority, callerLocals())
     if len(triggers) == 1 and not isinstance(triggers[0], ITrigger):
         return onDecorator((DEPLOY,), priority, callerLocals())(triggers[0])
+    return onDecorator(triggers, priority, callerLocals())
+
+def dump(*triggers, priority=PRIORITY_NORMAL):
+    '''
+    Decorator for deploy setup functions. The deploy function will be called every time the application is started.
+    This should manly be used to gather data.
+    
+    @param triggers: arguments[ITrigger]
+        Triggers to be considered for the deploy call, this will actually condition the deploy call to the provided triggers.
+    @param priority: one of priority markers
+        The priority to associate with the event.
+    '''
+    if not triggers: return onDecorator((DUMP,), priority, callerLocals())
+    if len(triggers) == 1 and not isinstance(triggers[0], ITrigger):
+        return onDecorator((DUMP,), priority, callerLocals())(triggers[0])
     return onDecorator(triggers, priority, callerLocals())
 
 def populate(*triggers, priority=PRIORITY_NORMAL):

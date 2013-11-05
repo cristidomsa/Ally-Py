@@ -21,10 +21,12 @@ from sql_alchemy.support.mapper import InsertFromSelect, tableFor
 from sql_alchemy.support.util_service import insertModel
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.expression import and_, select
+from ally.api.validate import validate
 
 # --------------------------------------------------------------------
 
 @setup(IRoleRbacService, name='roleService')
+@validate(RoleMapped)
 class RoleServiceAlchemy(EntityServiceAlchemy, RbacServiceAlchemy, IRoleRbacService):
     '''
     Implementation for @see: IRoleRbacService

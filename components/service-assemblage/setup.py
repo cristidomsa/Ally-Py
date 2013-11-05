@@ -16,19 +16,18 @@ from setuptools import setup, find_packages
 
 # --------------------------------------------------------------------
 
-setup(package_data={'': ['*.zip']},
-name='service-assemblage',
-author='Gabriel Nistor',
-install_requires=['ally-http >= 1.0', 'ally-indexing >= 1.0'],
-author_email='gabriel.nistor@sourcefabric.org',
-version='1.0',
-test_suite='__unit_test__',
-keywords=['Ally', 'REST', 'gateway', 'service', 'assemblage'],
-classifiers=['Development Status :: 4 - Beta'],
-description='Provides the assemblage service',
-packages=find_packages('.'),
-      platforms=['all'],
-      zip_safe=True,
-      license='GPL v3',
-      url='http://www.sourcefabric.org/en/superdesk/', # project home page
-      )
+setup(packages=find_packages('.'),
+     platforms=['all'],
+     zip_safe=True,
+     license='GPL v3',
+     url='http://www.sourcefabric.org/en/superdesk/', # project home page     package_data={'': ['*.zip']},
+     description='Provides the assemblage service',
+     author='Gabriel Nistor',
+     install_requires=['ally-http >= 1.0', 'ally-indexing >= 1.0'],
+     author_email='gabriel.nistor@sourcefabric.org',
+     version='1.0',
+     test_suite='__unit_test__',
+     keywords=['Ally', 'REST', 'gateway', 'service', 'assemblage'],
+     classifiers=['Development Status :: 4 - Beta'],
+     name='service-assemblage',
+     )

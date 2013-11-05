@@ -111,10 +111,14 @@ class IdError(InputError):
             for k, item in enumerate(items):
                 if not isinstance(item, str):
                     typ = typeFor(item)
-                    assert isinstance(typ, TypeModel), 'Invalid model type %s' % typ
-                    assert isinstance(typ.propertyId, TypeProperty), \
-                    'Invalid property id % for model %s' % (typ.propertyId, typ)
-                    items = chain(items[:k], (typ.propertyId,), items[k + 1:])
+                    if isinstance(typ, TypeProperty):
+                        propertyId = typ
+                    else:
+                        assert isinstance(typ, TypeModel), 'Invalid model type %s' % typ
+                        assert isinstance(typ.propertyId, TypeProperty), \
+                        'Invalid property id % for model %s' % (typ.propertyId, typ)
+                        propertyId = typ.propertyId
+                    items = chain(items[:k], (propertyId,), items[k + 1:])
                     self._hasId = True
                     break
         super().update(*items, **data)

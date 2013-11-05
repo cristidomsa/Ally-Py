@@ -9,7 +9,6 @@ Created on Jun 16, 2013
 Provides the setup for the decode processors.
 '''
 
-from .parsing_rendering import CATEGORY_CONTENT_OBJECT, CATEGORY_CONTENT_XML
 from ally.container import ioc
 from ally.core.impl.processor.decoder.base import failureTargetExport
 from ally.core.impl.processor.decoder.content.definition_content import \
@@ -32,13 +31,21 @@ from ally.core.impl.processor.decoder.general.mark_solved import \
 from ally.core.impl.processor.decoder.general.primitive import PrimitiveDecode, \
     primitiveDecodeExport
 from ally.core.impl.processor.decoder.option_slice import OptionSliceHandler
+from ally.core.impl.processor.decoder.validation.property_provider import \
+    ValidationPropertyProvider
 from ally.core.impl.processor.render.xml import NAME_LIST_ITEM, NAME_DICT_ENTRY, \
     NAME_DICT_KEY, NAME_DICT_VALUE
 from ally.design.processor.assembly import Assembly
 from ally.design.processor.handler import Handler
 
-# --------------------------------------------------------------------
+from .parsing_rendering import CATEGORY_CONTENT_OBJECT, CATEGORY_CONTENT_XML
+from ally.core.impl.processor.decoder.validation.auto_id import ValidateAutoId
+from ally.core.impl.processor.decoder.validation.mandatory import ValidateMandatory
+from ally.core.impl.processor.decoder.validation.read_only import ValidateReadOnly
+from ally.core.impl.processor.decoder.validation.max_len import ValidateMaxLen
 
+
+# --------------------------------------------------------------------
 @ioc.config
 def slice_limit_maximum() -> int:
     ''' The maximum imposed slice limit on a collection, if none then no maximum limit will be imposed'''
@@ -208,6 +215,23 @@ def primitiveDecode() -> Handler: return PrimitiveDecode()
 # --------------------------------------------------------------------
 
 @ioc.entity
+def validationPropertyProvider() -> Handler: return ValidationPropertyProvider()
+
+@ioc.entity
+def validateReadOnly() -> Handler: return ValidateReadOnly()
+
+@ioc.entity
+def validateAutoId() -> Handler: return ValidateAutoId()
+
+@ioc.entity
+def validateMandatory() -> Handler: return ValidateMandatory()
+
+@ioc.entity
+def validateMaxLen() -> Handler: return ValidateMaxLen()
+
+# --------------------------------------------------------------------
+
+@ioc.entity
 def markSolved() -> Handler: return MarkSolvedHandler()
 
 @ioc.entity
@@ -258,9 +282,11 @@ def updateAssemblyDecodePropertyOfModel():
     
 @ioc.before(assemblyDecodeModel)
 def updateAssemblyDecodeModel():
-    assemblyDecodeModel().add(propertyOfModelDecode(), listDecode(), dictDecode(), primitiveDecode(),
-                              definitionXMLCreate(), definitionContentXML(), definitionIndex(),
-                              definitionObjectCreate(), definitionContentObject(), definitionIndex())
+    assemblyDecodeModel().add(validationPropertyProvider(), validateReadOnly(), validateAutoId(), validateMandatory(),
+                              validateMaxLen(),
+                              propertyOfModelDecode(), listDecode(), dictDecode(), primitiveDecode(),
+                              definitionXMLCreate(), definitionContentXML(), definitionIndex(), definitionObjectCreate(),
+                              definitionContentObject(), definitionIndex())
     
 @ioc.before(assemblyDecodeContent)
 def updateAssemblyDecodeContent():

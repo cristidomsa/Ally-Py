@@ -14,7 +14,7 @@ from ._impl._setup import normalizeConfigType, setupsOf, SetupConfig, register, 
     setupFirstOf
 from ._impl._support import SetupEntityWire
 from .error import WireError, ConfigError, SetupError
-from ally.support.util_sys import callerLocals, locationStack
+from ally.support.util_sys import callerLocals, locationStack, updateWrapper
 from copy import deepcopy
 from functools import partial
 from inspect import isclass
@@ -145,7 +145,7 @@ def createWirings(clazz, target, group, registry, nameEntity, nameInEntity):
         else:
             mapping[wconfig.name] = name
             configCall = partial(wrapperWiredConfiguration, clazz, wconfig)
-            configCall.__doc__ = wconfig.description
+            updateWrapper(configCall, wrapperWiredConfiguration)
             if wconfig.type is not None: types = (wconfig.type,)
             else: types = ()
             register(SetupConfig(configCall, types=types, name=name, group=group), registry)

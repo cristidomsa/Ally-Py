@@ -9,13 +9,14 @@ Created on Jan 12, 2012
 Provides the setup registry for the plugins.
 '''
 
+from functools import partial
+
 from __setup__.ally_core.resources import services
 from ally.container.bind import processBinders
 from ally.container.impl.proxy import proxyWrapFor
-from functools import partial
+
 
 # --------------------------------------------------------------------
-
 def registerService(service, binders=None):
     '''
     A listener to register the service.

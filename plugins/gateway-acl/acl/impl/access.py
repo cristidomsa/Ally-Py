@@ -21,11 +21,13 @@ from sql_alchemy.impl.entity import EntityGetServiceAlchemy, \
 from sql_alchemy.support.util_service import deleteModel, iterateCollection, \
     insertModel
 from ally.api.criteria import AsBoolean
+from ally.api.validate import validate
     
 # --------------------------------------------------------------------
 
 @injected
 @setup(IAccessService, name='accessService')
+@validate(AccessMapped)
 class AccessServiceAlchemy(EntityGetServiceAlchemy, EntityQueryServiceAlchemy, IAccessService):
     '''
     Implementation for @see: IAccessService that provides the ACL access.

@@ -9,11 +9,12 @@ Created on Jul 18, 2013
 Provides definition specifications. 
 '''
 
-from ally.support.util_context import IPrepare
 import abc
 
-# --------------------------------------------------------------------
+from ally.support.util_context import IPrepare
 
+
+# --------------------------------------------------------------------
 class IVerifier(IPrepare):
     '''
     Description verifier for definition specification.
@@ -30,17 +31,14 @@ class IVerifier(IPrepare):
             True if the definition is checked by the verifier, False otherwise.
         '''
 
-class IValue(metaclass=abc.ABCMeta):
+class IValue(IPrepare):
     '''
     Description value provider for definition specification.
     '''
     
     def prepare(self, resolvers):
         '''
-        Prepare the resolvers contexts for the value fetching.
-        
-        @param resolvers: dictionary{string, IResolver}
-            The resolvers to prepare.
+        @see: IPrepare.prepare
         '''
     
     @abc.abstractmethod

@@ -20,9 +20,9 @@ from os import path
 # --------------------------------------------------------------------
 
 @ioc.config
-def repository_path():
+def repository_paths():
     ''' The repository absolute or relative (to the distribution folder) path from where to serve the files '''
-    return path.join('workspace', 'shared', 'cdm')
+    return [path.join('workspace', 'shared', 'cdm')]
 
 # --------------------------------------------------------------------
 # Creating the processors used in handling the request
@@ -30,7 +30,7 @@ def repository_path():
 @ioc.entity
 def contentDelivery() -> Handler:
     b = ContentDeliveryHandler()
-    b.repositoryPath = repository_path()
+    b.repositoryPaths = repository_paths()
     return b
 
 # --------------------------------------------------------------------

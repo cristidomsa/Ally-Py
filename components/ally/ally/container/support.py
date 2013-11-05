@@ -25,10 +25,11 @@ from .error import SetupError
 from .event import ITrigger, createEvents
 from .impl.config import Config
 from .wire import createWirings
+from __setup__.ally.notifier import PRIORITY_NOTIFIER
 
 
 # --------------------------------------------------------------------
-PRIORITY_LOAD_ENTITIES = Priority('Load all entities', after=PRIORITY_NORMAL)
+PRIORITY_LOAD_ENTITIES = Priority('Load all entities', before=PRIORITY_NOTIFIER)
 # The priority for @see: loadAllEntities.
 
 # --------------------------------------------------------------------

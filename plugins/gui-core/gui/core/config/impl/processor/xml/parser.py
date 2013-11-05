@@ -17,6 +17,7 @@ from ally.design.processor.handler import HandlerProcessor
 from ally.xml.context import DigesterArg, prepare
 from ally.xml.digester import Node
 import logging
+from ally.support.util_io import IInputStream
 
 # --------------------------------------------------------------------
 
@@ -34,7 +35,8 @@ class Solicit(Context):
     The parsed repository.
     ''')
     # ---------------------------------------------------------------- Required
-    file = requires(str)
+    stream = requires(IInputStream)
+    uri = requires(str)
 
 # --------------------------------------------------------------------
 
@@ -44,13 +46,15 @@ class ParserHandler(HandlerProcessor):
     Implementation for a processor that parses XML files based on digester rules.
     '''
     
-    rootNode = Node
     # The root node to use for parsing.
+    rootNode = Node
     
     def __init__(self):
         assert isinstance(self.rootNode, Node), 'Invalid node %s' % self.rootNode
         super().__init__(**prepare(self.rootNode))
         
+        #used for mapping each repository to a URI
+        self.uriRepository = dict()
         self._inError = False
 
     def process(self, chain, solicit:Solicit, Repository:Context, **keyargs):
@@ -62,16 +66,27 @@ class ParserHandler(HandlerProcessor):
         assert isinstance(chain, Chain), 'Invalid chain %s' % chain
         assert isinstance(solicit, Solicit), 'Invalid solicit %s' % solicit
         
-        digester = DigesterArg(chain.arg, self.rootNode, acceptUnknownTags=False)
-        digester.stack.append(Repository())
-        try:
-            with open(solicit.file, 'rb') as source: digester.parse('utf8', source)
-            if self._inError: log.warning('XML parsing OK')
-            self._inError = False
-        except Exception as e:
-            if not self._inError: log.error(e)
-            self._inError = True
-            chain.cancel()
-            return
+        #if there is no stream, just clean the repository for this URI (delete URI from self.uriRepository)
+        if solicit.stream is None: self.uriRepository.pop(solicit.uri, None)
+        else:
+            digester = DigesterArg(chain.arg, self.rootNode, acceptUnknownTags=False)
+            digester.stack.append(Repository())
+            try:
+                digester.parse('utf8', solicit.stream)
+                if self._inError: log.warning('XML parsing OK')
+                self._inError = False
+            except Exception as e:
+                if not self._inError: log.error(e)
+                self._inError = True
+                chain.cancel()
+                return
+            self.uriRepository[solicit.uri] = digester.stack.pop()
         
-        solicit.repository = digester.stack.pop()
+        #will make a root repository that contains all the repositories created so far (from the parsed files)
+        root = chain.arg.Repository()
+        root.children = []
+        for repository in self.uriRepository.values():
+            root.children.append(repository)
+        
+        solicit.repository = root
+        

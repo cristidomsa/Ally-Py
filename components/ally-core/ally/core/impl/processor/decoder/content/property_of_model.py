@@ -42,10 +42,6 @@ class Decoding(Context):
     @rtype: Context
     The parent decoding that this decoding is based on.
     ''')
-    property = defines(TypeProperty, doc='''
-    @rtype: TypeProperty
-    The property that represents the decoding.
-    ''')
     children = defines(dict, doc='''
     @rtype: dictionary{string: Context}
     The decoding children indexed by the decoding name.
@@ -60,6 +56,7 @@ class Decoding(Context):
     ''')
     # ---------------------------------------------------------------- Required
     type = requires(Type)
+    property = requires(TypeProperty)
     doSet = requires(IDo)
     doGet = requires(IDo)
     

@@ -1,0 +1,7 @@
+-r components.txt
+-r plugins.txt
+
+### Our implementation TBD###
+#babel==1.0dev
+#pytz==2012d
+#MySql-connector-python==0.3.2dev

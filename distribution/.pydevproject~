@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?eclipse-pydev version="1.0"?><pydev_project>
+
+<pydev_property name="org.python.pydev.PYTHON_PROJECT_VERSION">python 3.0</pydev_property>
+<pydev_property name="org.python.pydev.PYTHON_PROJECT_INTERPRETER">python3.2</pydev_property>
+
+<pydev_pathproperty name="org.python.pydev.PROJECT_EXTERNAL_SOURCE_PATH">
+<path>/home/chupy/rest_api/components/ally-api</path>
+<path>/home/chupy/rest_api/components/ally-core</path>
+<path>/home/chupy/rest_api/components/ally-core-http</path>
+<path>/home/chupy/rest_api/components/ally</path>
+<path>/home/chupy/rest_api/components/ally-http</path>
+<path>/home/chupy/rest_api/components/service-cdm</path>
+<path>/home/chupy/rest_api/components/ally-http-asyncore-server</path>
+<path>/home/chupy/rest_api/components/ally-http-mongrel2-server</path>
+<path>/home/chupy/rest_api/components/ally-plugin</path>
+<path>/home/chupy/rest_api/components/ally-indexing</path>
+<path>/home/chupy/rest_api/plugins/support-sqlalchemy</path>
+<path>/home/chupy/rest_api/plugins/gui-core</path>
+<path>/home/chupy/rest_api/plugins/support-cdm</path>
+<path>/home/chupy/rest_api/plugins/gateway</path>
+<path>/home/chupy/rest_api/plugins/indexing</path>
+<path>/home/chupy/rest_api/components/service-assemblage</path>
+<path>/home/chupy/rest_api/components/service-gateway</path>
+<path>/home/chupy/rest_api/plugins/gateway-acl</path>
+<path>/home/chupy/rest_api/plugins/security</path>
+<path>/home/chupy/rest_api/plugins/security-rbac</path>
+<path>/home/chupy/rest_api/superdesk/plugins/superdesk</path>
+<path>/home/chupy/rest_api/superdesk/plugins/superdesk-person</path>
+<path>/home/chupy/rest_api/superdesk/plugins/superdesk-user</path>
+<path>/home/chupy/rest_api/superdesk/plugins/superdesk-security</path>
+<path>/home/chupy/rest_api/plugins/gui-action</path>
+</pydev_pathproperty>
+
+
+</pydev_project>

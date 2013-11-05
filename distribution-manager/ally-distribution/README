@@ -1,15 +1,59 @@
 
-About:
+About distribution-manager:
 - Collect package information from __setup__(__plugin__)/__init__.py files in each package.
 - Generate eggs to path
-- Generate setup.py files used for pypi upload
+- Generate setup.py and setup.cfg files used for pypi upload
 - Publish package to pypi (requires auth)
 
+!!!IMPORTANT!!!
+Only use distribution-manager if your intention is to publish NEW components/plugins versions to pypi.
 
-Usage:
-distribution.py --location [path] 
-				--location [path] --components (Deploy only components from ally-py)
-				--location [path] --plugins (Deploy only plugins from ally-py)
-				
+Usage (Ubuntu):
+1. create in your home directory pypi config file:
 
-pip-3.2 install --target /opt/superdesk/ --use-wheel -r requirements.txt 
+echo "[distutils]
+index-servers =
+    pypi
+
+[pypi]
+username:Sourcefabric
+password:Sofabulous#78" > ~/.pypirc
+
+2. Build and publish components and/or plugins:
+(python 3.2.5 is required, for now)
+
+python3 distribution.py --location [path] 
+				        --location [path] --components 
+				        --location [path] --plugins
+
+Help: 
+  path         - the path where the eggs will be deployed
+  --components - build and publish only ally-py components
+  --plugins    - build and publish only ally-py plugins 
+
+
+For installing ally-py core with deps (Ubuntu):
+
+1. Download components requirements file
+
+wget https://github.com/cristidomsa/Ally-Py/blob/packaging_ally/requirements/components.txt
+
+2. Install compiling dependencies
+
+sudo apt-get install libxml2 libxml2-dev libxslt1.1 libxslt1-dev 
+
+3. Install Ally-py core (pip-3.2 needed - http://www.pip-installer.org/en/latest/installing.html) 
+
+cd requirements
+pip-3.2 install --target [path_to_desired_location] -r components.txt
+
+4. Configure Ally-py
+
+cd [path_to_desired_location]
+python3 application.py -dump
+
+5. Run Ally-py core
+
+python3 application.py
+
+6. Enjoy :)

@@ -16,18 +16,18 @@ from setuptools import setup, find_packages
 
 # --------------------------------------------------------------------
 
-setup(name='ally-core-http',
-install_requires=['ally-core >= 1.0', 'ally-http >= 1.0'],
-long_description='This component provides the actual handling for the HTTP [REST] by combining the ally-core and ally-http.',
-author_email='gabriel.nistor@sourcefabric.org',
-version='1.0',
-test_suite='__unit_test__',
-keywords=['Ally', 'REST', 'core', 'http '],
-classifiers=['Development Status :: 4 - Beta'],
-description='Provides the HTTP communication support',
-packages=find_packages('.'),
-      platforms=['all'],
-      zip_safe=True,
-      license='GPL v3',
-      url='http://www.sourcefabric.org/en/superdesk/', # project home page
-      )
+setup(packages=find_packages('.'),
+     platforms=['all'],
+     zip_safe=True,
+     license='GPL v3',
+     url='http://www.sourcefabric.org/en/superdesk/', # project home page     description='Provides the HTTP communication support',
+     install_requires=['ally-core >= 1.0', 'ally-http >= 1.0'],
+     long_description='This component provides the actual handling for the HTTP [REST] by combining the ally-core and ally-http.',
+     author_email='gabriel.nistor@sourcefabric.org',
+     version='1.0',
+     test_suite='__unit_test__',
+     keywords=['Ally', 'REST', 'core', 'http '],
+     classifiers=['Development Status :: 4 - Beta'],
+     name='ally-core-http',
+
+     )

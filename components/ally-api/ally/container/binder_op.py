@@ -167,8 +167,8 @@ def bindValidations(proxy, mappings=None):
                     if itype.clazz in mappings:
                         typ = typeFor(mappings[itype.clazz])
                         assert isinstance(typ, TypeModel), 'Invalid model mapping class %s' % mappings[typ.clazz]
-                    if isinstance(typ.clazz, BindableSupport):
-                        positions[k] = typ
+                        if isinstance(typ.clazz, BindableSupport):
+                            positions[k] = typ
             if positions:
                 bindBeforeListener(getattr(proxy, call.name),
                                    partial(onCallValidateModel, call.method == INSERT, positions))

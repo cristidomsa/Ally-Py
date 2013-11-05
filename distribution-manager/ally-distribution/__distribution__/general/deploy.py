@@ -55,12 +55,12 @@ def prepare():
 def deploy():
     if options.isFlag(FLAG_PACKAGE):
         if options.location: support.force(package_location, options.location)
-        onlyPlugins, onlyComponents = options.isFlag(FLAG_BUILD_COMPONENT), options.isFlag(FLAG_BUILD_PLUGIN)
+        onlyComponents, onlyPlugins = options.isFlag(FLAG_BUILD_COMPONENT), options.isFlag(FLAG_BUILD_PLUGIN)
         if not onlyPlugins and not onlyComponents: 
             onlyComponents = onlyPlugins = True 
         if onlyPlugins:
-            packagerPlugins().destFolder = onlyPlugins
+            packagerPlugins().destFolder = options.location
             packagerPlugins().generateSetupFiles()
         if onlyComponents: 
-            packagerComponents().destFolder = onlyComponents
+            packagerComponents().destFolder = options.location
             packagerComponents().generateSetupFiles()

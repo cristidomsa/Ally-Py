@@ -16,12 +16,17 @@ from setuptools import setup, find_packages
 
 # --------------------------------------------------------------------
 
-setup(version='1.0',
-name='ally-indexing',
-description='Provides the support for content indexing and content transformation',
-packages=find_packages('.'),
-      platforms=['all'],
-      zip_safe=True,
-      license='GPL v3',
-      url='http://www.sourcefabric.org/en/superdesk/', # project home page
-      )
+setup(packages=find_packages('.'),
+     platforms=['all'],
+     zip_safe=True,
+     license='GPL v3',
+     url='http://www.sourcefabric.org/en/superdesk/', # project home page     description='Provides the support for content indexing and content transformation',
+     author='Gabriel Nistor',
+     author_email='gabriel.nistor@sourcefabric.org',
+     version='1.0',
+     test_suite='__unit_test__',
+     keywords=['Ally', 'REST', 'indexing'],
+     classifiers=['Development Status :: 4 - Beta'],
+     name='ally-indexing',
+
+     )

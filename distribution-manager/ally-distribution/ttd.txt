@@ -1,0 +1,4 @@
+Here is the list of things to do in the next steps or nice to have features:
+
+1. cleanup after generating eggs
+2. 

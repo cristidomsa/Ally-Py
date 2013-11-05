@@ -59,7 +59,7 @@ class RbacServiceAlchemy(SessionSupport):
             
         sql = self.session().query(RoleMapped.Name)
         sql = sql.join(Child, Child.roleId == RoleMapped.id)
-        sql = sql.join(Parent, and_(Child.left > Parent.left, Child.right < Parent.right))
+        sql = sql.join(Parent, and_(Child.left >= Parent.left, Child.right <= Parent.right))
         sql = sql.join(RbacRole, and_(RbacRole.roleId == Parent.roleId, RbacRole.rbacId == rbacId))
         sql = sql.order_by(RoleMapped.Name)
         if q:

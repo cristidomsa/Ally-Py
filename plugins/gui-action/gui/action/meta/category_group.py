@@ -22,4 +22,4 @@ class GroupAction(Base, WithCategoryAction):
     '''
     __tablename__ = 'gui_action_group'
     
-    categoryId = Column('fk_group_id', ForeignKey(GroupMapped.id, ondelete='CASCADE'))
+    categoryId = Column('fk_group_id', ForeignKey(GroupMapped.id, ondelete='CASCADE'), primary_key=True)

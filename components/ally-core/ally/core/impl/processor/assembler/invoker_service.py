@@ -13,13 +13,16 @@ from collections import Iterable
 
 from ally.api.operator.type import TypeService, TypeCall
 from ally.api.type import typeFor, Type
-from ally.design.processor.attribute import requires, defines, optional
+from ally.design.processor.attribute import requires, defines, optional, \
+    definesIf
 from ally.design.processor.context import Context
 from ally.design.processor.handler import HandlerProcessor
 from ally.support.api.util_service import iterateInputs
 from ally.support.util_context import attributesOf, hasAttribute
 from ally.support.util_spec import IDo
 from ally.support.util_sys import locationStack
+from ally.api.validate import validationsFor
+from ally.container.impl.proxy import proxiedClass
 
 
 # --------------------------------------------------------------------
@@ -31,6 +34,11 @@ class Register(Context):
     invokers = defines(list, doc='''
     @rtype: list[Context]
     The invokers created based on the services.
+    ''')
+    validations = definesIf(dict, doc='''
+    @rtype: dictionary{TypeService: list[object, object]}
+    The validations indexed by the service type. As a value a list that provides on the first position the binded 
+    validation target and on the second the binded target
     ''')
     doCopyInvoker = defines(IDo, doc='''
     @rtype: callable(destination:Context, source:Context, exclude:set=None) -> Context
@@ -121,6 +129,14 @@ class InvokerServiceHandler(HandlerProcessor):
                     invoker.location = '%s\n,inherited from %s' % (locationStack(service.clazz), invoker.location)
                 invoker.doInvoke = getattr(implementation, call.name)
                 register.invokers.append(invoker)
+                
+            if Register.validations in register:
+                validations = validationsFor(proxiedClass(type(implementation)))
+                if validations:
+                    if register.validations is None: register.validations = {}
+                    svalidations = register.validations.get(service)
+                    if svalidations is None: register.validations[service] = validations
+                    else: svalidations.extend(validations)
         
         if register.invokers: register.doCopyInvoker = self.doCopyInvoker
 

@@ -11,10 +11,11 @@ Module containing report implementations.
 
 from .resolvers import reportOn
 from .spec import IReport, LIST_UNUSED
+from ally.support.util import Singletone
 
 # --------------------------------------------------------------------
 
-class ReportNone(IReport):
+class ReportNone(Singletone, IReport):
     '''
     Implementation for @see: IReport that reports nothing.
     '''

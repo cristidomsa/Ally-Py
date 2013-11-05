@@ -9,8 +9,13 @@ Created on Jan 5, 2012
 Provides utility methods for SQL alchemy service implementations.
 '''
 
-from .mapper import MappedSupport, mappingFor, tableFor
-from .session import openSession
+from inspect import isclass
+from itertools import chain
+from sqlalchemy.orm.attributes import InstrumentedAttribute
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.interfaces import PropComparator
+from sqlalchemy.orm.mapper import Mapper
+
 from ally.api.criteria import AsLike, AsOrdered, AsBoolean, AsEqual, AsDate, \
     AsTime, AsDateTime, AsRange
 from ally.api.error import IdError
@@ -19,15 +24,12 @@ from ally.api.operator.type import TypeProperty, TypeCriteria, TypeModel
 from ally.api.type import typeFor
 from ally.support.api.util_service import namesFor
 from ally.support.util import modifyFirst
-from inspect import isclass
-from itertools import chain
-from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.orm.interfaces import PropComparator
-from sqlalchemy.orm.mapper import Mapper
-from sqlalchemy.sql.expression import ColumnElement
+
+from .mapper import MappedSupport, mappingFor, tableFor
+from .session import openSession
+
 
 # --------------------------------------------------------------------
-
 class SessionSupport:
     '''
     Class that provides for the services that use SQLAlchemy the session support.
@@ -189,11 +191,11 @@ def iterateObjectCollection(sql, offset=None, limit=None, withTotal=False, facto
     '''
     if withTotal:
         sqlLimit = buildLimits(sql, offset, limit)
-        if limit <= 0: return (), sql.count()
+        if limit <= 0: return factorySlice((), sql.count())
         return factorySlice(sqlLimit.yield_per(10), sql.count(), offset, limit)
     return sql.yield_per(10)
 
-def iterateCollection(sql, offset=None, limit=None, withTotal=False, factorySlice=IterSlice):
+def iterateCollection(sql, offset=None, limit=None, withTotal=False, _factorySlice=IterSlice):
     '''
     Iterates the collection of value from the sql query based on the provided parameters.
     
@@ -207,8 +209,8 @@ def iterateCollection(sql, offset=None, limit=None, withTotal=False, factorySlic
     '''
     if withTotal:
         sqlLimit = buildLimits(sql, offset, limit)
-        if limit == 0: return (), sql.count()
-        return factorySlice((value for value, in sqlLimit.all()), sql.count(), offset, limit)
+        if limit == 0: return _factorySlice((), sql.count())
+        return _factorySlice((value for value, in sqlLimit.all()), sql.count(), offset, limit)
     return (value for value, in sql.all())
 
 # --------------------------------------------------------------------
@@ -236,7 +238,7 @@ def insertModel(Mapped, model, **data):
         
         dbModel = Mapped()
         for name, prop in typ.properties.items():
-            if name in data : continue
+            if name in data or not isinstance(getattr(Mapped, name), InstrumentedAttribute): continue
             if prop in model: setattr(dbModel, name, getattr(model, name))
             
         for name, value in data.items(): setattr(dbModel, name, value)
@@ -272,7 +274,7 @@ def updateModel(Mapped, model, **data):
         dbModel = openSession().query(Mapped).get(getattr(model, typ.propertyId.name))
         if not dbModel: raise IdError(typ.propertyId)
         for name, prop in typ.properties.items():
-            if name in data or not isinstance(getattr(Mapped, name), ColumnElement): continue
+            if name in data or not isinstance(getattr(Mapped, name), InstrumentedAttribute): continue
             if prop in model: setattr(dbModel, name, getattr(model, name))
             
         for name, value in data.items(): setattr(dbModel, name, value)

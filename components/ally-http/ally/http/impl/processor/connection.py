@@ -19,6 +19,7 @@ from ally.http.spec.headers import CONNECTION, CONNECTION_CLOSE, HeadersRequire,
     CONNECTION_KEEP, HeadersDefines, CONTENT_LENGTH
 from ally.support.util_io import IInputStream
 from collections import Iterable
+from ally.core.spec.codes import Coded
 
 # --------------------------------------------------------------------
 
@@ -40,7 +41,8 @@ class ConnectionHandler(Handler):
     def __init__(self):
         super().__init__(Processor({}, self.process))
         
-    def process(self, chain, request:HeadersRequire, response:HeadersDefines, responseCnt:ResponseContent, **keyargs):
+    def process(self, chain, request:HeadersRequire, response:(HeadersDefines, Coded),
+                responseCnt:ResponseContent, **keyargs):
         '''
         Ensure the response content length at the end of the chain execution.
         '''
@@ -72,6 +74,9 @@ def processKeep(final, response, responseCnt, **keyargs):
     '''
     Puts the keep connection header.
     '''
+    assert isinstance(response, Coded), 'Invalid response %s' % response
+    if not response.isSuccess: return processClosed(final, response)
+    
     assert isinstance(response, HeadersDefines), 'Invalid response %s' % response
     
     if CONTENT_LENGTH.has(response):

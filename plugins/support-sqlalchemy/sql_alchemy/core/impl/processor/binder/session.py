@@ -83,11 +83,13 @@ class BindSessionHandler(HandlerProcessor, IProxyHandler):
                 except:
                     endCurrent(rollback)
                     raise
-                
-            elif isgenerator(returned):
-                # If the returned value is a generator we need to wrap it in order to provide session support when the actual
-                # generator is used
-                return self.wrapGenerator(returned)
+            else:
+                endCurrent(commit) # Since there is no session there will be nothing to commit, we just make sure here
+                # that the session creator has been removed from q.
+                if isgenerator(returned):
+                    # If the returned value is a generator we need to wrap it in order to provide session support when the actual
+                    # generator is used
+                    return self.wrapGenerator(returned)
 
             return returned
 

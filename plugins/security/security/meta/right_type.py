@@ -11,14 +11,12 @@ Contains the SQL alchemy meta for right API.
 
 from ..api.right_type import RightType
 from .metadata_security import Base
-from sql_alchemy.support.mapper import validate
 from sqlalchemy.dialects.mysql.base import INTEGER
 from sqlalchemy.schema import Column
 from sqlalchemy.types import String
 
 # --------------------------------------------------------------------
 
-@validate
 class RightTypeMapped(Base, RightType):
     '''
     Provides the mapping for RightType.

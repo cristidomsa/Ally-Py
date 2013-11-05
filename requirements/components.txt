@@ -1,0 +1,9 @@
+### Ally-py Components ###
+ally-api >= 1.0
+ally-core-http >= 1.0
+ally-http-asyncore-server >= 1.0
+ally-http-mongrel2-server >= 1.0
+ally-plugin >= 1.0
+service-assemblage >= 1.0
+service-cdm >= 1.0
+service-gateway >= 1.0

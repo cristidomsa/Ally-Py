@@ -77,7 +77,7 @@ class ErrorTranslatorHandler(HandlerProcessor):
         assert isinstance(self.assembly, Assembly), 'Invalid assembly %s' % self.assembly
         super().__init__()
         
-        self._processing = self.assembly.createWith(dict(register=Register, Invoker=Invoker))
+        self._processing = self.assembly.create(register=Register, Invoker=Invoker)
 
     def process(self, chain, bind:Bind, **keyargs):
         '''
@@ -101,8 +101,8 @@ class ErrorTranslatorHandler(HandlerProcessor):
             assert isinstance(invoker, Invoker), 'Invalid invoker %s' % invoker
             assert isinstance(invoker.call, TypeCall), 'Invalid call %s' % invoker.call
             invokers[invoker.call.name] = invoker
-            
-        registerProxyHandler(ProxyTransalator(invokers), bind.proxy)
+        
+        if invokers: registerProxyHandler(ProxyTransalator(invokers), bind.proxy)
 
 # --------------------------------------------------------------------
 
@@ -129,26 +129,29 @@ class ProxyTransalator(IProxyHandler):
         'Invalid proxy method %s' % execution.proxyCall.proxyMethod
         
         invoker = self.invokers.get(execution.proxyCall.proxyMethod.name)
-        if invoker:
-            assert isinstance(invoker, Invoker), 'Invalid invoker %s' % invoker
+        if not invoker: return execution.invoke()
+        
+        assert isinstance(invoker, Invoker), 'Invalid invoker %s' % invoker
+        
+        try: return execution.invoke()
+        except SQLAlchemyError as exc:
+            iexc = None
             
-            try: return execution.invoke()
-            except SQLAlchemyError as exc:
-                if isinstance(exc, NoResultFound):
-                    iexc = IdError()
+            if isinstance(exc, NoResultFound):
+                iexc = IdError()
+            
+            elif isinstance(exc, IntegrityError):
+                iexc = InputError(_('There is already an entity having this unique properties'))
                 
-                elif isinstance(exc, IntegrityError):
-                    iexc = InputError(_('There is already an entity having this unique properties'))
-                    
-                elif isinstance(exc, OperationalError):
-                    if invoker.method == DELETE: iexc = InputError(_('Cannot delete because is used'))
-                    elif invoker.method != GET: iexc = InputError(_('An entity relation identifier is not valid'))
+            elif isinstance(exc, OperationalError):
+                if invoker.method == DELETE: iexc = InputError(_('Cannot delete because is used'))
+                elif invoker.method != GET: iexc = InputError(_('An entity relation identifier is not valid'))
+            
+            if iexc is not None:
+                if invoker.target: iexc.update(invoker.target)
+                log.info('SQL Alchemy handled exception occurred', exc_info=(type(exc), exc, exc.__traceback__))
+                iexc.with_traceback(exc.__traceback__)
+                exc = iexc
+            else: log.warn('Unknown SQL Alchemy error', exc_info=(type(exc), exc, exc.__traceback__))
                 
-                if iexc is not None:
-                    if invoker.target: iexc.update(invoker.target)
-                    log.info('SQL Alchemy handled exception occurred', exc_info=(type(exc), exc, exc.__traceback__))
-                    iexc.with_traceback(exc.__traceback__)
-                    exc = iexc
-                else: log.warn('Unknown SQL Alchemy error', str(exc))
-                    
-                raise exc
+            raise exc

@@ -9,53 +9,104 @@
 		<Action path="mucu" label="Mucu" parent="menu" />
 		<Action path="cucu" label="Mucu" parent="menu" />
 
-		<Access methods="PUT,DELETE" filter="FilterDummy, Authent, lala">
+		<Allows>
+			<Method>GET</Method>
+			<URL>/</URL>
+		</Allows>
+
+		<Allows methods="PUT,DELETE" filter="FilterDummy,Authent,lala">
 			<Method>GET</Method>
 			<URL>User/*</URL>
 			<URL>User/*/Blog</URL>
 			<URL>User/#/SubUser/*</URL>
-		</Access>
+		</Allows>
 		
-		<Access filter="userAuth">
+		<Allows filter="userAuth">
 			<Method>GET</Method>
-			<URL>User/*</URL>
-			<URL>User/*/Blog</URL>
-			<URL>User/#/SubUser/*</URL>
-		</Access>
+			<URL>HR/User/*</URL>
+		</Allows>
 	</Anonymous>
 
 	<Captcha>
-		<Access methods="GET" filter="userAuth">
+		<Allows methods="GET" filter="userAuth">
 			<URL>User/*</URL>
 			<URL>User/*/Blog</URL>
 			<URL>User/#/SubUser/*</URL>
-		</Access>
-		<Access methods="PUT" filter="userAuth">
+		</Allows>
+		<Allows methods="PUT" filter="userAuth">
 			<URL>User/*</URL>
-		</Access>
+		</Allows>
 	</Captcha>
 
-	<Right name="Requests inspection">
+	<Right name="Requests_inspection">
 		<Actions>
 			<Action path="menu_2" />
 			<Action path="menu_2.request" script="/js/aaa.js">Request</Action>
 		</Actions>
-		<Action path="menu_3" label="Menu">
-			<Action path="request" label="Request" />
-		</Action>
 		<Action path="mucu" label="Mucu" parent="menu_2" />
 
-		<Access filter="userAuth">
+		<Allows filter="userAuth">
 			<Method>GET</Method>
-			<URL>User/*</URL>
-			<URL>User/*/Blog</URL>
-			<URL>User/#/SubUser/*</URL>
-		</Access>
+			<URL alter="GUI/Action">HR/User/*/Action</URL>
+			<URL>HR/User/*</URL>
+			<URL>HR/User/#/SubUser/*</URL>
+		</Allows>
 
 		<Description>Allows for the viewing of all possible requests that can be made on the REST server, also the plugins and
 			components that are part of the
 			application are also visible.
 		</Description>
 	</Right>
+	
+	<Right name="Requests_inspection_2" inherits="Requests_inspection">
+		<Actions>
+			<Action path="menu_4" />
+			<Action path="menu_4.request" script="/js/aaa.js">Request</Action>
+		</Actions>		
+		
+		<Allows filter="noAuth">
+			<Method>GET</Method>
+			<URL>User/*/Blog</URL>
+		</Allows>
 
+		<Description>Allows for the viewing of all possible requests that can be made on the REST server, also the plugins and
+			components that are part of the
+			application are also visible.
+		</Description>
+	</Right>
+	
+	<Right name="Right_1" inherits="Right_2">
+		<Actions>
+			<Action path="menu_x" />
+		</Actions>		
+		
+		<Allows>
+			<Method>GET</Method>
+			<URL>User/*/Blog</URL>
+		</Allows>
+
+		<Description>Test cyclic inheritance
+		</Description>
+	</Right>
+	<Right name="Right_2" inherits="Right_3">
+		<Actions>
+			<Action path="menu_x" />
+		</Actions>		
+		
+		<Allows>
+			<Method>GET</Method>
+			<URL>User/*/Blog</URL>
+		</Allows>
+
+		<Description>Test cyclic inheritance
+		</Description>
+	</Right>
+	<Right name="Right_3" inherits="Right_1">
+		<Actions>
+			<Action path="menu_x" />
+		</Actions>		
+		
+		<Description>Test cyclic inheritance
+		</Description>
+	</Right>
 </Config>

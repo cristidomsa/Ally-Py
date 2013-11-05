@@ -18,11 +18,13 @@ from acl.core.spec import signature
 from ally.container.ioc import injected
 from ally.container.support import setup
 from sql_alchemy.impl.entity import EntityServiceAlchemy, EntitySupportAlchemy
+from ally.api.validate import validate
     
 # --------------------------------------------------------------------
 
 @injected
 @setup(IGroupService, name='groupService')
+@validate(GroupMapped)
 class GroupServiceAlchemy(EntityServiceAlchemy, AclServiceAlchemy, CompensateServiceAlchemy, IGroupService):
     '''
     Implementation for @see: IGroupService that provides the ACL groups.

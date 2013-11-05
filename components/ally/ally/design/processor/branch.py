@@ -9,6 +9,10 @@ Created on Mar 14, 2013
 Module containing processors branches.
 '''
 
+import abc
+
+from ally.design.processor.report import ReportNone
+
 from .assembly import Assembly
 from .context import create
 from .execution import Processing
@@ -17,10 +21,9 @@ from .resolvers import copyAttributes, attributesFor, extractContexts, solve, \
 from .spec import ContextMetaClass, IReport, IProcessor, AssemblyError, \
     LIST_UNAVAILABLE
 from .structure import restructureResolvers, extractResolvers
-import abc
+
 
 # --------------------------------------------------------------------
-
 class IBranch(metaclass=abc.ABCMeta):
     '''
     Specification for a branch handler.
@@ -79,6 +82,7 @@ class WithAssembly(IBranch):
         @return: list[Callable]
             Returns the processed target calls.
         '''
+        if self._assembly.reportUnused: report = ReportNone()
         calls = []
         for proc in self._assembly.processors:
             assert isinstance(proc, IProcessor), 'Invalid processor %s' % proc

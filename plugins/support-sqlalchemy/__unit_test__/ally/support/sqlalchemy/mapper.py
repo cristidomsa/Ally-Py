@@ -18,8 +18,8 @@ if True:
 
 from ally.api.config import model
 from ally.api.type import typeFor
-from ally.support.sqlalchemy.mapper import mapperSimple, validate, \
-    DeclarativeMetaModel
+from sql_alchemy.support.mapper import DeclarativeMetaModel, validate,\
+    mapperSimple
 from sqlalchemy.dialects.mysql.base import INTEGER
 from sqlalchemy.engine import create_engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -132,21 +132,13 @@ class TestMapping(unittest.TestCase):
         meta.create_all(engine)
 
     def testSuccesSimpleMapping(self):
-        self.assertTrue(typeFor(UserMapped.Id).isOf(int))
-        self.assertTrue(typeFor(UserMapped.Name).isOf(str))
-
         session = self.sessionCreate()
-        user = UserMapped()
-        self.assertTrue(UserMapped.Id not in user)
-        self.assertTrue(UserMapped.Name not in user)
-
+        user = UserMapped()        
         user.Name = 'Hello world'
-        self.assertTrue(UserMapped.Name in user)
-        self.assertTrue(UserMapped.Id not in user)
-
+        
         session.add(user)
         session.flush((user,))
-        self.assertTrue(UserMapped.Id in user)
+        self.assertTrue(user.Id)
 
         session.commit()
         session.close()
@@ -154,33 +146,21 @@ class TestMapping(unittest.TestCase):
         session = self.sessionCreate()
         users = session.query(UserMapped).filter(UserMapped.Name == 'Hello world').all()
         self.assertEqual(len(users), 1)
-        self.assertTrue(UserMapped.Id in users[0])
-        self.assertTrue(UserMapped.Name in users[0])
+        self.assertTrue(users[0].Id)
+        self.assertTrue(users[0].Name)
         self.assertEqual(users[0].Name, 'Hello world')
         self.assertEqual(users[0].Id, 1)
         session.close()
 
     def testSuccessInheritAndForeignKey(self):
-        self.assertTrue(typeFor(UserWithParent.Id).isOf(int))
-        self.assertTrue(typeFor(UserWithParent.Name).isOf(str))
-        self.assertTrue(typeFor(UserWithParent.Parent).isOf(Parent))
-
         session = self.sessionCreate()
-        user = UserWithParent()
-        self.assertTrue(UserWithParent.Id not in user)
-        self.assertTrue(UserWithParent.Name not in user)
-        self.assertTrue(UserWithParent.Parent not in user)
-
+        user = UserWithParent()        
         user.Name = 'Hello world'
-        self.assertTrue(UserWithParent.Name in user)
-
         user.Parent = 1
-        self.assertTrue(UserWithParent.Parent in user)
-        self.assertTrue(UserWithParent.Id not in user)
-
+        
         session.add(user)
         session.flush((user,))
-        self.assertTrue(UserWithParent.Id in user)
+        self.assertTrue(user.Id)
 
         session.commit()
         session.close()
@@ -189,9 +169,9 @@ class TestMapping(unittest.TestCase):
         users = session.query(UserWithParent).filter(UserWithParent.Name == 'Hello world').all()
         self.assertEqual(len(users), 1)
         user = users[0]
-        self.assertTrue(UserWithParent.Id in user)
-        self.assertTrue(UserWithParent.Name in user)
-        self.assertTrue(UserWithParent.Parent in user)
+        self.assertTrue(user.Id)
+        self.assertTrue(user.Name)
+        self.assertTrue(user.Parent)
         self.assertEqual(user.Name, 'Hello world')
         self.assertEqual(user.Id, 1)
         self.assertEqual(user.Parent, 1)
@@ -201,9 +181,9 @@ class TestMapping(unittest.TestCase):
         users = session.query(UserWithParent).filter(UserWithParent.Parent == 1).all()
         self.assertEqual(len(users), 1)
         user = users[0]
-        self.assertTrue(UserWithParent.Id in user)
-        self.assertTrue(UserWithParent.Name in user)
-        self.assertTrue(UserWithParent.Parent in user)
+        self.assertTrue(user.Id)
+        self.assertTrue(user.Name)
+        self.assertTrue(user.Parent)
         self.assertEqual(user.Name, 'Hello world')
         self.assertEqual(user.Id, 1)
         self.assertEqual(user.Parent, 1)

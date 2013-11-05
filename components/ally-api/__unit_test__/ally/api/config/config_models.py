@@ -84,9 +84,7 @@ class TestConfigure(unittest.TestCase):
         del a.Y
         self.assertTrue(a.Y == None)
 
-        self.assertTrue(typeFor(APIModel.Entity).type == typeFor(Entity))
         self.assertTrue(typeFor(APIModel.Entity.Id).type.isOf(str))
-        self.assertTrue(APIModel.Entity not in a)
         a.Entity = '121'
         self.assertTrue(APIModel.Entity in a)
         self.assertTrue(isinstance(a.Entity, str))

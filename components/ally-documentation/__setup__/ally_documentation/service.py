@@ -22,7 +22,7 @@ from ally.documentation.core.impl.processor.index_api import IndexAPIHandler
 from ally.documentation.core.impl.processor.templates import TemplateHandler
 
 from ..ally_core.definition import descriptions
-from ..ally_core.resources import injectorAssembly, register
+from ..ally_core.resources import assemblyAssembler, injectorAssembly, register
 from ..ally_core_http import definition_header, definition_parameter
 from ..ally_core_http.definition_header import parameterHeaderVerifier
 
@@ -123,6 +123,10 @@ def generator() -> Handler:
     return b
 
 # --------------------------------------------------------------------
+
+@ioc.before(assemblyAssembler)
+def disableUnusedReport():
+    assemblyAssembler().reportUnused = False
 
 @ioc.before(assemblyDocumentation)
 def updateAssemblyDocumentation():

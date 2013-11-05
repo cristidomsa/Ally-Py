@@ -9,6 +9,8 @@ Created on Jul 12, 2013
 Provides verifiers for definitions.
 '''
 
+from inspect import isclass
+
 from ally.api.operator.type import TypeProperty, TypeModel
 from ally.api.type import typeFor, Input, Type
 from ally.core.spec.definition import IVerifier, IValue
@@ -18,10 +20,9 @@ from ally.design.processor.resolvers import merge
 from ally.support.api.util_service import isCompatible
 from ally.support.util import Singletone
 from ally.support.util_context import findFirst
-from inspect import isclass
+
 
 # --------------------------------------------------------------------
-
 class VerifierOperator(IVerifier):
     '''
     Base class for @see: IVerifier that allows for operators between them.
@@ -391,7 +392,7 @@ class ModelId(VerifierOperator, Singletone):
 
 # --------------------------------------------------------------------
 
-class ReferencesNames(IValue, Singletone):
+class ReferencesNames(Singletone, IValue):
     '''
     Implementation for a @see: IValue that provides the references names.
     '''
@@ -422,3 +423,40 @@ class ReferencesNames(IValue, Singletone):
                 assert isinstance(defin, ReferencesNames.Definition), 'Invalid definition %s' % defin
                 if defin.name: names.append(defin.name)
         return names
+
+class MaximumLength(Singletone, VerifierOperator, IValue):
+    '''
+    Implementation for a @see: IVerifier, IValue that validates and fetches the maximum length imposed on a decoding.
+    '''
+
+    class Decoding(Context):
+        '''
+        The decoding context.
+        '''
+        # ---------------------------------------------------------------- Optional
+        maximumLength = optional(int)
+
+    def prepare(self, resolvers):
+        '''
+        @see: IVerifier.prepare
+        '''
+        merge(resolvers, dict(Definition=InputType.Definition, Decoding=MaximumLength.Decoding))
+
+    def isValid(self, definition):
+        '''
+        @see: IVerifier.isValid
+        '''
+        assert isinstance(definition, InputType.Definition), 'Invalid definition %s' % definition
+        if not definition.decoding: return False
+        if MaximumLength.Decoding.maximumLength not in definition.decoding: return False
+        if definition.decoding.maximumLength is None: return False
+        return True
+    
+    def get(self, definition):
+        '''
+        @see: IValue.get
+        '''
+        assert isinstance(definition, InputType.Definition), 'Invalid definition %s' % definition
+        if not definition.decoding: return
+        if MaximumLength.Decoding.maximumLength not in definition.decoding: return
+        return definition.decoding.maximumLength

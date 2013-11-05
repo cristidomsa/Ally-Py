@@ -11,7 +11,7 @@ SQL alchemy implementation for article API.
 
 from ..api.article import IArticleService
 from ..meta.article import Article
-from .entity import EntityServiceAlchemy
+from sql_alchemy.impl.entity import EntityServiceAlchemy
 
 # --------------------------------------------------------------------
 

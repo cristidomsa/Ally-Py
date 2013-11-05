@@ -26,6 +26,7 @@ from sql_alchemy.support.util_service import SessionSupport, iterateCollection
 from hashlib import sha512
 import json
 import re
+from ally.api.validate import validate, Mandatory
 
 # --------------------------------------------------------------------
 
@@ -40,6 +41,7 @@ class Solicit(Context):
 
 @injected
 @setup(IGatewayService, name='gatewayService')
+@validate(Mandatory(Custom.Name))
 class GatewayServiceAlchemy(IGatewayService, SessionSupport):
     '''
     Implementation for @see: IGatewayService that provides the default anonymous gateway data.

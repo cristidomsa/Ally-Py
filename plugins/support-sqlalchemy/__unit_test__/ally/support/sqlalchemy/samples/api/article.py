@@ -10,13 +10,13 @@ API specifications for article.
 '''
 
 from .article_type import ArticleType
-from .entity import Entity, IEntityService
 from ally.api.config import model, service, call
 from ally.api.type import Iter
+from ally.support.api.entity_ided import Entity, IEntityService
 
 # --------------------------------------------------------------------
 
-@model()
+@model
 class Article(Entity):
     '''
     Provides the article model.

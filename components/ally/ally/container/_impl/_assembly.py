@@ -105,6 +105,7 @@ class Assembly:
         self.calls = {}
         self.callsOfValue = {}
         self.called = set()
+        self.setups = []
         
         self._setupsToIndex = []
         self._setupsToAssemble = []
@@ -143,8 +144,8 @@ class Assembly:
             The self instance for chaining purposes.
         '''
         if self._setupsToAssemble:
-            self._setupsToAssemble.sort(key=lambda setup: setup.priority_assemble)
-            for setup in self._setupsToAssemble: setup.assemble(self)
+            for setup in sorted(self._setupsToAssemble, key=lambda setup: setup.priority_assemble): setup.assemble(self)
+            self.setups = self._setupsToAssemble
             self._setupsToAssemble = []
 
         return self

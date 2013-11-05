@@ -288,7 +288,7 @@ class Repository(IRepository):
         @param identifiers: list[Identifier]
             The identifiers to be used by the repository.
         '''
-        assert isinstance(clientIP, str), 'Invalid client IP %s' % clientIP
+        assert clientIP is None or isinstance(clientIP, str), 'Invalid client IP %s' % clientIP
         assert isinstance(identifiers, list), 'Invalid identifiers %s' % identifiers
         assert issubclass(Match, MatchRepository), 'Invalid match class %s' % Match
         
@@ -303,7 +303,7 @@ class Repository(IRepository):
         for identifier in self._identifiers:
             assert isinstance(identifier, Identifier), 'Invalid identifier %s' % identifier
             
-            if identifier.clients:
+            if identifier.clients and self._clientIP is not None:
                 for client in identifier.clients:
                     if client.match(self._clientIP): break
                 else: return

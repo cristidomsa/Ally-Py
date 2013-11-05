@@ -13,14 +13,12 @@ from ..api.group import Group
 from .acl import WithAclAccess
 from .compensate import WithCompensate
 from .metadata_acl import Base
-from sql_alchemy.support.mapper import validate
 from sqlalchemy.dialects.mysql.base import INTEGER
 from sqlalchemy.schema import Column, ForeignKey
 from sqlalchemy.types import String, Boolean
 
 # --------------------------------------------------------------------
 
-@validate
 class GroupMapped(Base, Group):
     '''
     Provides the ACL group mapping.
