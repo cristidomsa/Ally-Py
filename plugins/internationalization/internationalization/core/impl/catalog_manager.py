@@ -18,7 +18,7 @@ from ally.core.error import DevelError
 from babel.messages.pofile import read_po, write_po
 from babel.compat import BytesIO
 from internationalization.core.spec import ICatalogManager
-from ..internationalization.service import globalMessagesName
+from ..service import globalMessagesName
 
 # --------------------------------------------------------------------
 

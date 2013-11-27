@@ -17,7 +17,7 @@ from ally.core.error import DevelError
 from ally.api.error import InputError, IdError
 from ally.internationalization import _, C_
 from internationalization.api.po_file import IInternationlizationFileService
-from internationalization.core.spec import IPOFileManager, InvalidLocaleError,\
+from internationalization.core.spec import ICatalogManager, InvalidLocaleError,\
     ICDMSyncronizer
 from babel.core import Locale, UnknownLocaleError
 import logging

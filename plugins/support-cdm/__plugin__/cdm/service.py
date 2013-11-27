@@ -11,8 +11,7 @@ Configuration for cdm service
 
 from os import path
 
-from ally.cdm.impl.local_filesystem import IDelivery, HTTPDelivery, \
-    LocalFileSystemLinkCDM, LocalFileSystemCDM
+from ally.cdm.impl.local_filesystem import IDelivery, HTTPDelivery, LocalFileSystemCDM
 from ally.cdm.spec import ICDM
 from ally.container import ioc
 

@@ -11,15 +11,11 @@ Contains the Content Delivery Manager implementation for local file system
 
 from ally.cdm.spec import ICDM, UnsupportedProtocol, PathNotFound
 from ally.container.ioc import injected
-from ally.zip.util_zip import ZIPSEP, normOSPath, normZipPath, getZipFilePath, \
-    validateInZipPath
-from datetime import datetime
-from os.path import isdir, isfile, join, dirname, normpath, relpath, abspath
+from ally.zip.util_zip import normOSPath, normZipPath
+from os.path import isdir, isfile, join, dirname, abspath
 from shutil import copyfile, copyfileobj, move, rmtree
 from urllib.parse import urljoin
-from zipfile import ZipFile
 import abc
-import json
 import logging
 import os
 from json.encoder import JSONEncoder
@@ -144,8 +140,8 @@ class LocalFileSystemCDM(ICDM):
                 return metadata
             except:
                 assert log.warning('No CDM metadata found for path {0).'.format(path), exc_info=1) or True
-                return {'createdOn': os.path.getctime(filename),
-                        'lastModified': os.path.getmtime(filename)}
+                return {'createdOn': os.path.getctime(itemPath),
+                        'lastModified': os.path.getmtime(itemPath)}
 
     # --------------------------------------------------------------------
 
