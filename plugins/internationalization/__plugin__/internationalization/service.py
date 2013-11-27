@@ -17,7 +17,7 @@ from ally.container import support, ioc, bind
 from ..cdm.service import contentDeliveryManager
 import logging
 from internationalization.core.impl.po_file_manager import DBPOFileManager
-from internationalization.core.impl.cdm_syncronizer import poCDMSyncronyzer
+from internationalization.core.impl.cdm_syncronizer import POCDMSyncronyzer
 
 log = logging.getLogger(__name__)
 
@@ -27,12 +27,19 @@ SERVICES = 'internationalization.api.**.I*Service'
 
 # --------------------------------------------------------------------
 
-bind.bindToEntities('internationalization.impl.**.*Alchemy', poCDMSyncronyzer, DBPOFileManager, binders=binders)
+bind.bindToEntities('internationalization.impl.**.*Alchemy', POCDMSyncronyzer, DBPOFileManager, binders=binders)
 support.createEntitySetup('internationalization.impl.**.*', 'internationalization.*.impl.**.*')
 support.listenToEntities(SERVICES, listeners=registerService, beforeBinding=False)
 support.loadAllEntities(SERVICES)
 
 # --------------------------------------------------------------------
+
+@ioc.config
+def globalMessagesName():
+    '''
+    The name used for global messages for PO files
+    '''
+    return 'application'
 
 @ioc.entity
 def cdmLocale() -> ICDM:

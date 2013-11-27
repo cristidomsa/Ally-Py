@@ -28,11 +28,6 @@ log = logging.getLogger(__name__)
 
 class Publisher:
     
-    packagePath = str
-    #path to the current package
-    packageName = str
-    #name of the package
-    
     def __init__(self, packageName, packagePath):
         '''
         do nothing

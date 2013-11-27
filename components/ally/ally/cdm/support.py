@@ -33,23 +33,17 @@ class ExtendPathCDM(ICDM):
         self.wrapped = wrapped
         self.format = format
 
-    def publishFromFile(self, path, filePath):
+    def publishFromFile(self, path, filePath, metadata):
         '''
         @see: ICDM.publishFromFile
         '''
-        self.wrapped.publishFromFile(self.format % path, filePath)
+        self.wrapped.publishFromFile(self.format % path, filePath, metadata)
 
-    def publishFromDir(self, path, dirPath):
-        '''
-        @see: ICDM.publishFromDir
-        '''
-        self.wrapped.publishFromDir(self.format % path, dirPath)
-
-    def publishContent(self, path, content):
+    def publishContent(self, path, content, metadata):
         '''
         @see: ICDM.publishContent
         '''
-        self.wrapped.publishContent(self.format % path, content)
+        self.wrapped.publishContent(self.format % path, content. metadata)
         
     def updateMetadata(self, path, metadata):
         '''

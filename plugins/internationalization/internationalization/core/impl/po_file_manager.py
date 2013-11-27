@@ -11,13 +11,14 @@ Implementation for the PO file management.
 
 from ally.container.ioc import injected
 from ally.container.support import setup
-from internationalization.core.spec import IPOFileManager
+from internationalization.core.spec import ICatalogManager
 import logging
 from internationalization.core.impl.catalog_manager import CatalogManager
 from sql_alchemy.support.util_service import SessionSupport
 from internationalization.meta.db_mapping import POTMapped, POMapped
 from sqlalchemy.sql.expression import and_
 from datetime import datetime
+from ..internationalization.service import globalMessagesName
 
 # --------------------------------------------------------------------
 
@@ -25,7 +26,7 @@ log = logging.getLogger(__name__)
 # --------------------------------------------------------------------
 
 @injected
-@setup(IPOFileManager, name='dbPOFileManager')
+@setup(ICatalogManager, name='dbPOFileManager')
 class DBPOFileManager(CatalogManager, SessionSupport):
     '''
     Implementation for @see: IPOFileManager
@@ -95,6 +96,7 @@ class DBPOFileManager(CatalogManager, SessionSupport):
             self.session().add(item)
             return True
         except:
+            assert log.debug('Storing PO in db failed!', exc_info=1) or True
             return False
         
     def getAllPOTs(self):
@@ -104,13 +106,14 @@ class DBPOFileManager(CatalogManager, SessionSupport):
         @return list
             The list of pots stored in db
         '''
+        
         return self.session().query(POTMapped.Name).all()
     
     def getLatestTimestampForPOT(self, name):
         '''
-        Implementaion for @see: IPOFileManager.getLatestTimestampForPOT
+        Implementaion for @see: CatalogManager.getLatestTimestampForPOT
         '''
-        if name == 'application':
+        if name == globalMessagesName():
             return int(datetime.now().strftime('%s'))
         
         sql = self.session().query(POTMapped.timestamp)
@@ -125,7 +128,7 @@ class DBPOFileManager(CatalogManager, SessionSupport):
             
     def getLatestTimestampForPO(self, name, locale):
         '''
-        Implementaion for @see: IPOFileManager.getLatestTimestampForPO
+        Implementaion for @see: CatalogManager.getLatestTimestampForPO
         '''
         
         sql = self.session().query(POMapped.timestamp)

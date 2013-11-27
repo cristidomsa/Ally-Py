@@ -19,7 +19,7 @@ class ICDM(metaclass=abc.ABCMeta):
     '''
 
     @abc.abstractmethod
-    def publishFromFile(self, path, filePath):
+    def publishFromFile(self, path, filePath, metadata):
         '''
         Publish content from a file.
 
@@ -27,10 +27,12 @@ class ICDM(metaclass=abc.ABCMeta):
             The path of the content item. This is a unique identifier of the item.
         @param filePath: string or file object
             The path of the file on the file system or a readable file object
+        @param metadata: dict
+            The dict containing metadata as key:value pairs
         '''
 
     @abc.abstractmethod
-    def publishContent(self, path, content):
+    def publishContent(self, path, content, metadata):
         '''
         Publish content from a string.
 
@@ -38,6 +40,8 @@ class ICDM(metaclass=abc.ABCMeta):
             The path of the content item. This is a unique identifier of the item.
         @param content: input stream
             The content as input stream
+        @param metadata: dict
+            The dict containing metadata as key:value pairs
         '''
         
     @abc.abstractmethod
@@ -46,7 +50,7 @@ class ICDM(metaclass=abc.ABCMeta):
         Publish metadata for the item provided by path
         @param path: string
             The path of the content item. This is a unique identifier of the item.
-        @param content: dict
+        @param metadata: dict
             The dict containing metadata as key:value pairs
         '''
         
@@ -99,7 +103,7 @@ class ICDM(metaclass=abc.ABCMeta):
         
         @param path: string
             The path to the item in cdm
-        @return: json
+        @return: dict
             The value of the metadata for the stored item 
         '''
     

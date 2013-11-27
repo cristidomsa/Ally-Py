@@ -9,14 +9,16 @@ Created on Nov 14, 2013
 Catalog manager implementation.
 '''
 import logging
+import codecs
+import abc
 from babel.messages import catalog
 from ally.container import wire
 from babel.messages.catalog import Catalog
-import codecs
 from ally.core.error import DevelError
 from babel.messages.pofile import read_po, write_po
 from babel.compat import BytesIO
-from internationalization.core.spec import IPOFileManager
+from internationalization.core.spec import ICatalogManager
+from ..internationalization.service import globalMessagesName
 
 # --------------------------------------------------------------------
 
@@ -24,7 +26,7 @@ log = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------
 
-class CatalogManager(IPOFileManager):
+class CatalogManager(ICatalogManager):
     '''
     The PO file manager: processes and returns the global or plugin
     PO/POT files content from anywhere.
@@ -62,7 +64,8 @@ class CatalogManager(IPOFileManager):
         '''
         @see: IPOFileManager.getGlobalPOCatalog
         '''
-        content = self.getData(name='application', locale=locale)
+        name = globalMessagesName()
+        content = self.getData(name=name, locale=locale)
         catalog = self._getCatalog(content, self.default_charset)
         if catalog:
             template = self.getGlobalPOTCatalog()
@@ -105,7 +108,7 @@ class CatalogManager(IPOFileManager):
         '''
         @see IPOFileManager.updateGlobalPO
         '''
-        name = 'application'
+        name = globalMessagesName()
         encoding = poFile.charSet or self.default_charset
         poFile = codecs.getreader(encoding)(poFile)
         newCatalog = self._getCatalog(poFile, encoding)
@@ -147,20 +150,31 @@ class CatalogManager(IPOFileManager):
         return self.storeData(name=name, content=content.getvalue())
             
     # --------------------------------------------------------------------
+    @abc.abstractmethod
+    def getLatestTimestampForPO(self, name, locale):
+        '''
+        Provides latest timestamp for PO file
+        '''
+        
+    @abc.abstractmethod
+    def getLatestTimestampForPOT(self, name):
+        '''
+        Provides latest timestamp for POT file
+        '''
+    
+    # --------------------------------------------------------------------
+    
     def _getCatalog(self, content, encoding):
         '''
         Validate content and return PO messages catalog from it.
         '''
         try:
-            catalog = read_po(content)
-            return catalog
-        except Exception as e:
-            assert log.debug('Error reading po file: %s' % e) or True
+            return read_po(content)
+        except:
+            assert log.debug('Error reading po file', exc_info=1) or True
             try:
-                catalog = read_po(BytesIO(content))
-                return catalog
-            except Exception as e:
-                assert log.debug('Error reading po file: %s' % e) or True
+                return read_po(BytesIO(content))
+            except:
                 assert log.debug('content not a PO file!', exc_info=1) or True
                 return
     

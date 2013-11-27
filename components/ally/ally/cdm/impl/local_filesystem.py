@@ -105,109 +105,11 @@ class LocalFileSystemCDM(ICDM):
 
     delivery = IDelivery
     # The delivery protocol
-    meta_ext = '.~metadata~'; wire.config('cdm_meta_extension', doc='''Extension for cdm metadata files''')
+    cdm_meta_extension = '.~metadata~'; wire.config('cdm_meta_extension', doc='''Extension for cdm metadata files''')
     #Metadata extension
 
     def __init__(self):
         assert isinstance(self.delivery, IDelivery), 'Invalid delivery protocol %s' % self.delivery
-
-    def publishFromFile(self, path, filePath, metadata=None):
-        '''
-        @see ICDM.publishFromFile
-        '''
-        assert isinstance(path, str) and len(path) > 0, 'Invalid content path %s' % path
-        if not isinstance(filePath, str) and hasattr(filePath, 'read'):
-            return self._publishFromFileObj(path, filePath)
-        assert isinstance(filePath, str), 'Invalid file path value %s' % filePath
-        path, dstFilePath = self._validatePath(path)
-        dstDir = dirname(dstFilePath)
-        if not isdir(dstDir):
-            os.makedirs(dstDir)
-        if not os.access(filePath, os.R_OK):
-            raise IOError('Unable to read the file path %s' % filePath)
-        if not self._isSyncFile(filePath, dstFilePath):
-            copyfile(filePath, dstFilePath)
-            self.updateMetadata(filePath, metadata)
-            assert log.debug('Success publishing file %s to path %s', filePath, path) or True
-
-#     def publishFromDir(self, path, dirPath):
-#         '''
-#         @see ICDM.publishFromDir
-#         '''
-#         assert isinstance(path, str) and len(path) > 0, 'Invalid content path %s' % path
-#         assert isinstance(dirPath, str), 'Invalid directory path value %s' % dirPath
-#         path, _fullPath = self._validatePath(path)
-#         dirPath = normpath(dirPath)
-#         if not os.access(dirPath, os.R_OK):
-#             raise IOError('Unable to read the directory path %s' % dirPath)
-#         for root, _dirs, files in os.walk(dirPath):
-#             relPath = relpath(root, dirPath)
-#             for file in files:
-#                 publishPath = join(normOSPath(path), relPath.lstrip(os.sep), file)
-#                 filePath = join(root, file)
-#                 self.publishFromFile(publishPath, filePath)
-#             assert log.debug('Success publishing directory %s to path %s', dirPath, path) or True
-
-    def publishContent(self, path, content, metadata=None):
-        '''
-        @see ICDM.publishContent
-        '''
-        assert isinstance(path, str), 'Invalid content path %s' % path
-        path, dstFilePath = self._validatePath(path)
-        dstDir = dirname(dstFilePath)
-        if not isdir(dstDir):
-            os.makedirs(dstDir)
-        with open(dstFilePath, 'w+b') as dstFile:
-            copyfileobj(content, dstFile)
-            self.updateMetadata(dstFilePath, metadata)
-            assert log.debug('Success publishing content to path %s', path) or True
-
-    def updateMetadata(self, path, metadata):
-        '''
-        @see ICDM.updateMetadata
-        '''
-        assert isinstance(path, str), 'Invalid content path %s' % path
-        metadataPath = path + self.meta_ext
-        oldMetadata = self.getMetadata(metadataPath)
-        if metadata == None:
-            metadata = oldMetadata if oldMetadata else {}
-        if metadata:
-            if 'lastModified' in metadata.keys():
-                assert log.warning('Metadata update: lastModifed field is read-only. Cannot be updated by user') or True
-                metadata.pop('lastModified', None)
-            if oldMetadata:
-                metadata = oldMetadata.update(metadata)
-        metadata['lastModified'] = int(datetime.now().strftime('%s'))
-        self.publishFromFile(metadataPath, BytesIO(bytes(JSONEncoder().encode(metadata), 'utf-8')))
-        assert log.debug('Success publishing metadata for path %s', path) or True
-
-    def republish(self, oldPath, newPath):
-        '''
-        @see ICDM.republish
-        '''
-        oldPath, oldFullPath = self._validatePath(oldPath)
-        if isdir(oldFullPath):
-            raise PathNotFound(oldPath)
-        newPath, newFullPath = self._validatePath(newPath)
-        if isdir(newFullPath) or isfile(newFullPath):
-            raise ValueError('New path %s is already in use' % newPath)
-        dstDir = dirname(newFullPath)
-        if not isdir(dstDir):
-            os.makedirs(dstDir)
-        move(oldFullPath, newFullPath)
-
-    def remove(self, path):
-        '''
-        @see ICDM.remove
-        '''
-        path, itemPath = self._validatePath(path)
-        if isdir(itemPath):
-            rmtree(itemPath)
-        elif isfile(itemPath):
-            os.remove(itemPath)
-        else:
-            raise PathNotFound(path)
-        assert log.debug('Success removing path %s', path) or True
 
     def getSupportedProtocols(self):
         '''
@@ -235,16 +137,98 @@ class LocalFileSystemCDM(ICDM):
         assert isinstance(path, str), 'Invalid content path %s' % path
         path, itemPath = self._validatePath(path)
         if isdir(itemPath) or isfile(itemPath):
-            metaItemPath = itemPath + self.meta_ext
+            metaItemPath = itemPath + self.cdm_meta_extension
             try:
-                metaFile = open(metaItemPath, 'r')
-                metaInfo = JSONDecoder().decode(metaFile.read())
-                metaFile.close()
-                return metaInfo
+                with open(metaItemPath, 'r') as metaFile: 
+                    metadata = JSONDecoder().decode(metaFile.read())
+                return metadata
             except:
-                assert log.warning('No CDM metadata found for path {0).'.format(path))
-                return {}
+                assert log.warning('No CDM metadata found for path {0).'.format(path), exc_info=1) or True
+                return {'createdOn': os.path.getctime(filename),
+                        'lastModified': os.path.getmtime(filename)}
+
+    # --------------------------------------------------------------------
+
+    def publishFromFile(self, path, filePath, metadata):
+        '''
+        @see ICDM.publishFromFile
+        '''
+        assert isinstance(path, str) and len(path) > 0, 'Invalid content path %s' % path
+        if not isinstance(filePath, str) and hasattr(filePath, 'read'):
+            return self._publishFromFileObj(path, filePath)
+        assert isinstance(filePath, str), 'Invalid file path value %s' % filePath
+        path, dstFilePath = self._validatePath(path)
+        dstDir = dirname(dstFilePath)
+        if not isdir(dstDir):
+            os.makedirs(dstDir)
+        if not os.access(filePath, os.R_OK):
+            raise IOError('Unable to read the file path %s' % filePath)
+        if not self._isSyncFile(filePath, dstFilePath):
+            copyfile(filePath, dstFilePath)
+            assert log.debug('Success publishing file %s to path %s', filePath, path) or True
+        if metadata: 
+            self.updateMetadata(filePath, metadata)
+
+    def publishContent(self, path, content, metadata):
+        '''
+        @see ICDM.publishContent
+        '''
+        assert isinstance(path, str), 'Invalid content path %s' % path
+        path, dstFilePath = self._validatePath(path)
+        dstDir = dirname(dstFilePath)
+        if not isdir(dstDir):
+            os.makedirs(dstDir)
+        with open(dstFilePath, 'w+b') as dstFile:
+            copyfileobj(content, dstFile)
+            assert log.debug('Success publishing content to path %s', path) or True
+        if metadata: 
+            self.updateMetadata(dstFilePath, metadata)
+
+    def updateMetadata(self, path, metadata):
+        '''
+        @see ICDM.updateMetadata
+        '''
+        assert isinstance(path, str), 'Invalid content path %s' % path
+        metadataPath = path + self.cdm_meta_extension
+        oldMetadata = self.getMetadata(metadataPath)
+        metadata = oldMetadata.update(metadata)
+        metadata['lastModified'] = os.path.getmtime(path)
+        self.publishFromFile(metadataPath, BytesIO(bytes(JSONEncoder().encode(metadata), 'utf-8')), metadata=None)
+        assert log.debug('Success publishing metadata for path %s', path) or True
+
+    def republish(self, oldPath, newPath):
+        '''
+        @see ICDM.republish
+        '''
+        oldPath, oldFullPath = self._validatePath(oldPath)
+        if isdir(oldFullPath):
+            raise PathNotFound(oldPath)
+        newPath, newFullPath = self._validatePath(newPath)
+        if isdir(newFullPath) or isfile(newFullPath):
+            raise ValueError('New path %s is already in use' % newPath)
+        dstDir = dirname(newFullPath)
+        if not isdir(dstDir):
+            os.makedirs(dstDir)
+        move(oldFullPath, newFullPath)
+
+    def remove(self, path):
+        '''
+        @see ICDM.remove
+        '''
+        path, itemPath = self._validatePath(path)
+        if isdir(itemPath):
+            rmtree(itemPath)
+        elif isfile(itemPath):
+            os.remove(itemPath)
+            metadataPath = itemPath + self.cdm_meta_extension 
+            if isfile(metadataPath):
+                os.remove(metadataPath)
+        else:
+            raise PathNotFound(path)
+        assert log.debug('Success removing path %s', path) or True
         
+    # --------------------------------------------------------------------
+    
     def _publishFromFileObj(self, path, fileObj):
         '''
         Publish content from a file object
@@ -283,224 +267,4 @@ class LocalFileSystemCDM(ICDM):
         return ((isfile(srcFilePath) and isfile(dstFilePath)) or \
                 (isdir(srcFilePath) and isdir(dstFilePath))) \
                 and os.stat(srcFilePath).st_mtime < os.stat(dstFilePath).st_mtime
-
-@injected
-class LocalFileSystemLinkCDM(LocalFileSystemCDM):
-    '''
-    @see ICDM (Content Delivery Manager interface)
-    '''
-    _linkExt = '.link'
-
-    _zipHeader = 'ZIP'
-
-    _fsHeader = 'FS'
-
-    _deletedExt = '.deleted'
-
-    def publishFromFile(self, path, filePath):
-        '''
-        @see ICDM.publishFromFile
-        '''
-        path, _fullPath = self._validatePath(path)
-        if not isinstance(filePath, str) and hasattr(filePath, 'read'):
-            return self._publishFromFileObj(path, filePath)
-        self._publishFromFile(path, filePath)
-
-    def publishFromDir(self, path, dirPath):
-        '''
-        @see ICDM.publishFromDir
-        '''
-        assert isinstance(path, str), 'Invalid path %s' % path
-        assert isinstance(dirPath, str), 'Invalid directory path %s' % dirPath
-        path, _fullPath = self._validatePath(path)
-        dirPath = dirPath.strip()
-        self._publishFromFile(path, dirPath if dirPath.endswith(ZIPSEP) else dirPath + ZIPSEP)
-
-    def republish(self, oldPath, newPath):
-        '''
-        @see ICDM.republish
-        '''
-        raise NotImplementedError('Republish operation not available')
-
-    def remove(self, path):
-        '''
-        @see ICDM.remove
-        '''
-        path, entryPath = self._validatePath(path)
-        if isfile(entryPath.rstrip(os.sep)):
-            return os.remove(entryPath)
-
-        linkPath = entryPath
-        repPathLen = len(self.delivery.getRepositoryPath())
-        while len(linkPath.lstrip(os.sep)) > repPathLen:
-            linkFile = linkPath + self._linkExt
-            if isfile(linkFile):
-                subPath = entryPath[len(linkPath):].lstrip(os.sep)
-                with open(linkFile) as f:
-                    links = json.load(f)
-                    count = 0
-                    for link in links:
-                        if link[0] == self._fsHeader and self._isValidFSLink(link, subPath):
-                            self._removeFSLink(link, path, entryPath, subPath); count += 1
-                            break
-                        elif link[0] == self._zipHeader and self._isValidZIPLink(link, subPath):
-                            self._removeZiplink(link, path, entryPath, subPath); count += 1
-                            break
-                    if count == 0:
-                        raise PathNotFound(path)
-                break
-            nextLinkPath = dirname(linkPath)
-            if nextLinkPath == linkPath: break
-            linkPath = nextLinkPath
-        else:
-            raise PathNotFound(path)
-        if len(subPath.strip(os.sep)) == 0 and isdir(linkPath):
-            rmtree(linkPath)
-
-    def getURI(self, path, protocol='http'):
-        '''
-        @see ICDM.getURI
-        '''
-        assert isinstance(path, str), 'Invalid content path %s' % path
-        assert isinstance(protocol, str), 'Invalid protocol %s' % protocol
-        if protocol == 'http':
-            return super().getURI(path)
-        elif protocol == 'file':
-            path, dstFilePath = self._validatePath(path)
-            return abspath(dstFilePath)
-        raise UnsupportedProtocol(protocol)
-
-    def _createDelMark(self, path):
-        '''
-        Creates a mark file for a deleted path inside a linked directory
-        or ZIP file.
-
-        @param path: string
-            The path for which to create the delete mark.
-        '''
-        if not isdir(dirname(path)):
-            os.makedirs(dirname(path))
-        with open(path.rstrip(os.sep) + self._deletedExt, 'w') as _d: pass
-        if isdir(path):
-            rmtree(path)
-
-    def _isValidFSLink(self, link, subPath):
-        '''
-        Returns true if the file identified by subpath exists in
-        the given link to a file / directory, false otherwise.
-
-        @param link: list
-            Link description in JSON format.
-        @param subPath: string
-            The path inside the linked directory (if needed)
-        '''
-        filePath = join(link[1], subPath) if subPath else link[1]
-        return (not subPath or isdir(link[1])) and (isfile(filePath) or isdir(filePath))
-
-    def _isValidZIPLink(self, link, subPath):
-        '''
-        Returns true if the file identified by subpath exists in
-        the given link to a ZIP archive, false otherwise.
-
-        @param link: list
-            Link description in JSON format.
-        @param subPath: string
-            The path inside the linked directory (if needed)
-        '''
-        zipFilePath = normOSPath(link[1])
-        inFilePath = normOSPath(link[2], True)
-        zipFile = ZipFile(zipFilePath)
-        inZipFile = normZipPath(join(inFilePath, subPath)) if subPath else normZipPath(inFilePath)
-        return inZipFile in zipFile.NameToInfo
-
-    def _removeFSLink(self, link, path, entryPath, subPath):
-        '''
-        Removes a link to a file or directory on the file system.
-
-        @param link: list
-            Link description in JSON format.
-        @param path: string
-            The repository path to remove.
-        @param entryPath: string
-            The full path for which to create the deletion mark.
-        @param subPath: string
-            The path inside the linked directory (if needed)
-        '''
-        if isdir(link[1]):
-            filePath = join(link[1], subPath)
-            if isfile(filePath) or isdir(filePath):
-                self._createDelMark(entryPath)
-            else:
-                raise PathNotFound(path)
-        elif subPath:
-            raise PathNotFound(path)
-
-    def _removeZiplink(self, link, path, entryPath, subPath):
-        '''
-        Removes a link to a file or directory in a ZIP archive.
-
-        @param link: list
-            Link description in JSON format.
-        @param path: string
-            The repository path to remove.
-        @param entryPath: string
-            The full path for which to create the deletion mark.
-        @param subPath: string
-            The path inside the linked ZIP archive.
-        '''
-        zipFilePath = normOSPath(link[1])
-        inFilePath = normOSPath(link[2], True)
-        zipFile = ZipFile(zipFilePath)
-        inZipFile = normZipPath(join(inFilePath, subPath))
-        if not inZipFile in zipFile.NameToInfo:
-            raise PathNotFound(path)
-        self._createDelMark(entryPath)
-
-    def _createLinkToZipFile(self, path, zipFilePath, inFilePath):
-        repFilePath = self._getItemPath(path) + self._linkExt
-        if isfile(repFilePath):
-            with open(repFilePath, 'r') as f: links = json.load(f)
-        else: links = []
-        inFilePath = normZipPath(inFilePath)
-        for k, entry in enumerate(links):
-            if entry and entry[0] == self._zipHeader:
-                if entry[1] == zipFilePath and entry[2] == inFilePath:
-                    if k > 0: links.insert(0, links.pop(k))
-                    break
-        else: links.insert(0, (self._zipHeader, zipFilePath, inFilePath))
-
-        with open(repFilePath, 'w') as f: json.dump(links, f)
-
-    def _createLinkToFileOrDir(self, path, filePath):
-        repFilePath = self._getItemPath(path) + self._linkExt
-        if isfile(repFilePath):
-            with open(repFilePath, 'r') as f: links = json.load(f)
-        else: links = []
-        for k, entry in enumerate(links):
-            if entry and entry[0] == self._fsHeader:
-                if entry[1] == filePath:
-                    if k > 0: links.insert(0, links.pop(k))
-                    break
-        else: links.insert(0, (self._fsHeader, filePath))
-
-        with open(repFilePath, 'w') as f: json.dump(links, f)
-
-    def _publishFromFile(self, path, filePath):
-        assert isinstance(path, str) and len(path) > 0, 'Invalid content path %s' % path
-        assert isinstance(filePath, str), 'Invalid file path value %s' % filePath
-        dstDir = dirname(self._getItemPath(path))
-        if not isdir(dstDir):
-            os.makedirs(dstDir)
-        if isfile(filePath) or isdir(filePath):
-            filePath = normpath(filePath)
-            assert os.access(filePath, os.R_OK), 'Unable to read file path %s' % filePath
-            self._createLinkToFileOrDir(path, filePath)
-            return
-
-        # not a file, see if it's a entry in a zip file
-        zipFilePath, inFilePath = getZipFilePath(filePath, self.delivery.getRepositoryPath())
-        assert isfile(zipFilePath) and os.access(zipFilePath, os.R_OK), \
-            'Unable to read file path %s' % filePath
-        zipFile = ZipFile(zipFilePath)
-        validateInZipPath(zipFile, inFilePath)
-        self._createLinkToZipFile(path, zipFilePath, inFilePath)
+                

@@ -29,10 +29,6 @@ class Scanner:
     '''
     The class that provides the localization messages scanner.
     '''
-    packagePath = str
-    #path to the current package
-    packageName = str
-    #name of the package
 
     def __init__(self, packageName, packagePath):
         '''

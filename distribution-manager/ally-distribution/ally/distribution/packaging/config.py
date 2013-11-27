@@ -19,10 +19,6 @@ class Config:
     '''
     Class used for generating configuration files.
     '''
-    packagePath = str
-    # path to the current package
-    packageName = str
-    # The name of the current package
     
     def __init__(self, packageName, packagePath):
         '''

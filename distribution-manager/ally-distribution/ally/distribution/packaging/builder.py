@@ -19,11 +19,6 @@ log = logging.getLogger(__name__)
 
 class Builder:
     
-    packagePath = str
-    #path to the current package
-    packageName = str
-    #name of the package
-    
     def __init__(self, packageName, packagePath):
         '''
         do nothing

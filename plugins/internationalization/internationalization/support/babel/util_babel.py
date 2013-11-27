@@ -96,18 +96,3 @@ def fixBabelCatalogAddBug(msg, numPlurals):
                     string.append('')
             msg.string = tuple(string)
             
-def catalogToFile(catalog, config):
-        '''
-        Convert the catalog to a PO file like object.
-    
-        @param catalog: Catalog
-            The catalog to convert to a file.
-        @return: file read object
-            A file like object to read the PO file from.
-        '''
-        assert isinstance(catalog, Catalog), 'Invalid catalog %s' % catalog
-    
-        fileObj = BytesIO()
-        write_po(fileObj, catalog, **config)
-        fileObj.seek(0)
-        return fileObj

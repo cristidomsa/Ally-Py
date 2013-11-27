@@ -14,10 +14,8 @@ from internationalization.core.spec import ICDMSyncronizer
 from ally.container.support import setup
 from ally.cdm.spec import ICDM
 from ally.container import wire
-from os.path import join, isdir
-import os
+from os.path import join
 from babel.compat import BytesIO
-from json.encoder import JSONEncoder
 from babel.messages.catalog import Catalog
 from babel.messages.pofile import write_po
   
@@ -27,23 +25,23 @@ log = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------
 
-FILENAME_PO = 'messages.po'
-# The format of the po files.
-FILENAME_POT = 'messages.pot'
-# The format of the pot files.
+
 
 # --------------------------------------------------------------------
 
 @injected
 @setup(ICDMSyncronizer, name='poCDMSync')
-class poCDMSyncronyzer(ICDMSyncronizer):
+class POCDMSyncronyzer(ICDMSyncronizer):
     '''
     Implementaion for @see: ICDMSyncronizer
     '''
     cdmLocale = ICDM; wire.entity('cdmLocale')
     
-    locale_dir_path = join('workspace', 'shared', 'locale'); wire.config('locale_dir_path', doc='''
-    The locale repository path''')
+    filename_po = 'messages.po'; wire.config('filename_po', doc='''Filename of PO file in CDM''')
+    # The format of the po files.
+    
+    filename_pot = 'messages.pot'; wire.config('filename_pot', doc='''Filename of POT file in CDM''')
+    # The format of the pot files. 
     
     #TODO: get rid of this from here
     write_po_config = {
@@ -67,17 +65,15 @@ class poCDMSyncronyzer(ICDMSyncronizer):
     :param include_previous: include the old msgid as a comment when updating the catalog
     ''')
     
-    cdm_po_file_path = join('{name}', 'locale', '{locale}', 'LC_MESSAGES', FILENAME_PO); wire.config('cdm_po_file_path', doc='''
-                                The CDM path for PO files''')
-    cdm_pot_file_path = join('{name}', 'locale', FILENAME_POT); wire.config('cdm_pot_file_path', doc='''
-                                The CDM path for POT files''')
+    cdm_po_file_path = join('{name}', 'locale', '{locale}', 'LC_MESSAGES', filename_po); wire.config('cdm_po_file_path', doc='''
+    The CDM path for PO files''')
+    cdm_pot_file_path = join('{name}', 'locale', filename_pot); wire.config('cdm_pot_file_path', doc='''
+    The CDM path for POT files''')
     
     def __init__(self):
-        assert isinstance(self.locale_dir_path, str), 'Invalid locale directory %s' % self.locale_dir_path
-        if not os.path.exists(self.locale_dir_path): os.makedirs(self.locale_dir_path)
-        if not isdir(self.locale_dir_path) or not os.access(self.locale_dir_path, os.W_OK):
-            raise IOError('Unable to access the locale directory %s' % self.locale_dir_path)
-    
+        '''
+        '''
+        
     def publish(self, content, name, locale, timestamp):
         '''
         Publish content to path in CDM if content changed
@@ -115,33 +111,4 @@ class poCDMSyncronyzer(ICDMSyncronizer):
         write_po(fileObj, catalog, **self.write_po_config)
         fileObj.seek(0)
         return fileObj
-  
-def asDict(self, catalog):
-    '''
-    Convert the catalog to a dictionary.
-    Format description: @see IPOFileManager.getGlobalAsDict
-  
-    @param catalog: Catalog
-        The catalog to convert to a dictionary.
-    @return: dict
-        The dictionary in the format specified above.
-    '''
-    assert isinstance(catalog, Catalog), 'Invalid catalog %s' % catalog
-  
-    d = { }
-    d[''] = { 'lang' : catalog.locale.language, 'plural-forms' : catalog.plural_forms }
-    for msg in catalog:
-        if not msg or msg.id == '': continue
-        if isinstance(msg.id, (list, tuple)):
-            key, key_plural = msg.id
-            singular, plural = msg.string[0], msg.string[1]
-        else:
-            key, key_plural = msg.id, ''
-            singular, plural = msg.string, ''
-        singular = singular if singular is not None else ''
-        plural = plural if plural is not None else ''
-        key = key if not msg.context else "%s:%s" % (msg.context, key)
-        d[key] = [ key_plural, singular, plural ]
-    return { 'domain' : d }
-  
-
+    

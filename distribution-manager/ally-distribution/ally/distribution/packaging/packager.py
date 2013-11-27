@@ -45,10 +45,6 @@ class Packager:
     @todo: update description
     Distribution class for managing requirements, deploy path
     '''
-    packagePath = str
-    #path to the current package
-    packageName = str
-    #name of the package
     destFolder = str
     # destination folder to deploy distribution
     
