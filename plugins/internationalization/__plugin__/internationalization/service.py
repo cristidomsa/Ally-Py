@@ -35,7 +35,7 @@ support.loadAllEntities(SERVICES)
 # --------------------------------------------------------------------
 
 @ioc.config
-def globalMessagesName():
+def global_messages_name():
     '''
     The name used for global messages for PO files
     '''

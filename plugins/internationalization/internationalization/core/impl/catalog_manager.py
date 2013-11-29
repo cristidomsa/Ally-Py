@@ -18,7 +18,6 @@ from ally.core.error import DevelError
 from babel.messages.pofile import read_po, write_po
 from babel.compat import BytesIO
 from internationalization.core.spec import ICatalogManager
-from ..service import globalMessagesName
 
 # --------------------------------------------------------------------
 
@@ -31,7 +30,8 @@ class CatalogManager(ICatalogManager):
     The PO file manager: processes and returns the global or plugin
     PO/POT files content from anywhere.
     '''
-
+    global_messages_name = 'application'; wire.config('global_messages_name', doc='''Global messages name. Used in db''')
+    
     default_charset = 'UTF-8'; wire.config('default_charset', doc='''
     The default character set to use whenever a PO file is uploaded and the character
     set of the content is not specified''')
@@ -64,7 +64,7 @@ class CatalogManager(ICatalogManager):
         '''
         @see: IPOFileManager.getGlobalPOCatalog
         '''
-        name = globalMessagesName()
+        name = self.globalMessagesName
         content = self.getData(name=name, locale=locale)
         catalog = self._getCatalog(content, self.default_charset)
         if catalog:
@@ -108,7 +108,7 @@ class CatalogManager(ICatalogManager):
         '''
         @see IPOFileManager.updateGlobalPO
         '''
-        name = globalMessagesName()
+        name = self.globalMessagesName
         encoding = poFile.charSet or self.default_charset
         poFile = codecs.getreader(encoding)(poFile)
         newCatalog = self._getCatalog(poFile, encoding)

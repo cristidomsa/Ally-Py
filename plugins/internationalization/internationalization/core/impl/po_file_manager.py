@@ -18,7 +18,6 @@ from sql_alchemy.support.util_service import SessionSupport
 from internationalization.meta.db_mapping import POTMapped, POMapped
 from sqlalchemy.sql.expression import and_
 from datetime import datetime
-from ..internationalization.service import globalMessagesName
 
 # --------------------------------------------------------------------
 
@@ -113,7 +112,7 @@ class DBPOFileManager(CatalogManager, SessionSupport):
         '''
         Implementaion for @see: CatalogManager.getLatestTimestampForPOT
         '''
-        if name == globalMessagesName():
+        if name == self.global_messages_name:
             return int(datetime.now().strftime('%s'))
         
         sql = self.session().query(POTMapped.timestamp)

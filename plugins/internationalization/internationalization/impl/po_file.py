@@ -21,7 +21,6 @@ from internationalization.core.spec import ICatalogManager, InvalidLocaleError,\
     ICDMSyncronizer
 from babel.core import Locale, UnknownLocaleError
 import logging
-from ..internationalization.service import globalMessagesName
 
 # --------------------------------------------------------------------
 
@@ -35,11 +34,11 @@ class POFileService(IInternationlizationFileService):
     Implementation for @see: IInternationlizationFileService
     '''
 
-    poFileManager = IPOFileManager; wire.entity('poFileManager')
+    poFileManager = ICatalogManager; wire.entity('poFileManager')
     cdmSync = ICDMSyncronizer; wire.entity('cdmSync')
 
     def __init__(self):
-        assert isinstance(self.poFileManager, IPOFileManager), 'Invalid PO file manager %s' % self.poFileManager
+        assert isinstance(self.poFileManager, ICatalogManager), 'Invalid PO file manager %s' % self.poFileManager
         assert isinstance(self.cdmSync, ICDMSyncronizer), 'Invalid CDM syncronizer %s' % self.cdmSync
         
     def getPOFile(self, locale, scheme, name=None):
@@ -50,9 +49,9 @@ class POFileService(IInternationlizationFileService):
         except UnknownLocaleError: raise InvalidLocaleError(locale)
         if not name:
             result = self.poFileManager.getGlobalPOCatalog(locale, scheme)
-            timestamp = self.poFileManager.getLatestTimestampForPO(name=globalMessagesName(), locale=locale)
+            timestamp = self.poFileManager.getLatestTimestampForPO(name=self.poFileManager.global_messages_name, locale=locale)
             if not result: raise IdError('No global PO file available. Upload one before trying to get one!')
-            else: timestamp = self.poFileManager.getLatestTimestampForPO(name=globalMessagesName(), locale=locale)
+            else: timestamp = self.poFileManager.getLatestTimestampForPO(name=self.poFileManager.global_messages_name, locale=locale)
         else:
             result = self.poFileManager.getPluginPOCatalog(name, locale)
             if not result:
@@ -60,7 +59,7 @@ class POFileService(IInternationlizationFileService):
                 result = self.poFileManager.getGlobalPOCatalog(locale)
                 if not result:
                     raise IdError('No global PO file available. Upload one before trying to get one!')
-                else: timestamp = self.poFileManager.getLatestTimestampForPO(name=globalMessagesName(), locale=locale)
+                else: timestamp = self.poFileManager.getLatestTimestampForPO(name=self.poFileManager.global_messages_name, locale=locale)
             else:
                 timestamp = self.poFileManager.getLatestTimestampForPO(name=name, locale=locale)
         path = self.cdmSync.publish(result, name, locale,  timestamp)
@@ -73,8 +72,8 @@ class POFileService(IInternationlizationFileService):
         if not name:
             result = self.poFileManager.getGlobalPOTCatalog()
             if not result: raise IdError('No global POT file could be generated!')
-            else: timestamp = self.poFileManager.getLatestTimestampForPOT(name=globalMessagesName())
-            name = globalMessagesName()
+            else: timestamp = self.poFileManager.getLatestTimestampForPOT(name=self.poFileManager.global_messages_name)
+            name = self.poFileManager.global_messages_name
         else:
             result = self.poFileManager.getPluginPOTCatalog(name)
             timestamp = self.poFileManager.getLatestTimestampForPOT(name)

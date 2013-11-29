@@ -44,6 +44,6 @@ def delivery() -> IDelivery:
 
 @ioc.entity
 def contentDeliveryManager() -> ICDM:
-    cdm = LocalFileSystemLinkCDM() if use_linked_cdm() else LocalFileSystemCDM()
+    cdm = LocalFileSystemCDM()
     cdm.delivery = delivery()
     return cdm
